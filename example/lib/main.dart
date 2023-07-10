@@ -48,8 +48,8 @@ class _MyAppState extends State<MyApp> {
     data["user_id"] = "12345";
     final valueInt = await Shield.isShieldInitialized;
     ShieldConfig config = ShieldConfig(
-        siteID: "dda05c5ddac400e1c133a360e2714aada4cda052",
-        key: "9ce44f88a25272b6d9cbb430ebbcfcf1",
+        siteID: "SHIELD_SITE_ID",
+        key: "SHIELD_SECRET_KEY",
         shieldCallback: shieldCallback,
         environment: ShieldEnvironment.prod,
         logLevel: ShieldLogLevel.debug);
