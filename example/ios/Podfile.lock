@@ -1,9 +1,9 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_shieldfraud (1.0.9):
+  - flutter_shieldfraud (1.0.10):
     - Flutter
-    - ShieldFraud (= 1.5.25)
-  - ShieldFraud (1.5.25)
+    - ShieldFraud (= 1.5.28)
+  - ShieldFraud (1.5.28)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
@@ -21,9 +21,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
-  flutter_shieldfraud: 4ece4bdbf98aaa4bca18200c7c857bc89f656fc3
-  ShieldFraud: 441a98d6d7a93a832fbaa0e71f7c33f0a9649af2
+  flutter_shieldfraud: 91df076b14ccafc4e2f4cd2a4c48933419afe69a
+  ShieldFraud: d79af5280f65ba8b99188bffec32c33df18931ff
 
 PODFILE CHECKSUM: d08e30077a700e78308d8611dd3c9a470302f88a
 
-COCOAPODS: 1.12.0
+COCOAPODS: 1.12.1

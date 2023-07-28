@@ -1,3 +1,8 @@
+### 1.0.10
+
+- Minor Bug Fix for iOS
+- Bump native iOS version to 1.5.28
+
 ### 1.0.9
 
 - Bump native Android and iOS versions to 1.6.+ and 1.5.25
