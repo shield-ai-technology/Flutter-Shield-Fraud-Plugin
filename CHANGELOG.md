@@ -1,3 +1,8 @@
+### 1.0.11
+
+- Minor Bug Fix for iOS
+- Bump native iOS version to 1.5.29
+
 ### 1.0.10
 
 - Minor Bug Fix for iOS
