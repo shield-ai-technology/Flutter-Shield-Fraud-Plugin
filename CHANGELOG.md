@@ -1,3 +1,7 @@
+### 1.0.12
+
+- Implemented BlockedDialog for iOS & Android
+
 ### 1.0.11
 
 - Minor Bug Fix for iOS

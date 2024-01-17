@@ -33,6 +33,12 @@ class Shield {
         "enableMocking": config.enableMocking,
         "partnerId": config.partnerId,
         "environment": environment,
+        "defaultBlockedDialog": config.defaultBlockedDialog != null
+            ? {
+                "title": config.defaultBlockedDialog!.title,
+                "body": config.defaultBlockedDialog!.body,
+              }
+            : null,
         "logLevel": config.logLevel.toString()
       });
     } catch (_) {

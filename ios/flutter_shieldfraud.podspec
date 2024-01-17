@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_shieldfraud'
-  s.version          = '1.0.11'
+  s.version          = '1.0.12'
   s.summary          = 'flutter plugin for Shield SDK'
   s.description      = <<-DESC
 A new flutter plugin project.

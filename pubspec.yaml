@@ -1,6 +1,6 @@
 name: flutter_shieldfraud
 description: Flutter plugin for Shield SDK. SHIELD SDK helps developers to assess malicious activities performed on mobile devices and return risk intelligence based on user's behaviour.
-version: 1.0.11
+version: 1.0.12
 homepage: https://www.shield.com
 
 environment:

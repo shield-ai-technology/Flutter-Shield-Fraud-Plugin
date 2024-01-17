@@ -9,6 +9,7 @@ import androidx.annotation.NonNull
 import com.shield.android.Shield
 import com.shield.android.ShieldCallback
 import com.shield.android.ShieldException
+import com.shield.android.BlockedDialog
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 
@@ -114,6 +115,12 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
         call.argument<String>("partnerId")?.let {
             if (it.isNotEmpty()) builder.setPartnerId(it)
         }
+
+        call.argument<HashMap<String, String>>("defaultBlockedDialog")?.let {
+            if (it != null)
+            builder.setAutoBlockDialog(BlockedDialog(it["title"], it["body"]))
+        }
+
         call.argument<Boolean>("registerCallback")?.let {
             if (it) {
                 builder.registerDeviceShieldCallback(object : ShieldCallback<JSONObject> {

@@ -18,6 +18,13 @@ class ShieldCallback {
   ShieldCallback(this.onSuccess, this.onError);
 }
 
+class BlockedDialog {
+  final String title;
+  final String body;
+
+  BlockedDialog({required this.title, required this.body});
+}
+
 class ShieldConfig {
   final String siteID;
   final String key;
@@ -28,6 +35,7 @@ class ShieldConfig {
   bool enableBackgroundListener = false;
   String? partnerId = "";
   ShieldCallback? shieldCallback;
+  BlockedDialog? defaultBlockedDialog;
 
   ShieldConfig(
       {required this.siteID,
@@ -38,5 +46,6 @@ class ShieldConfig {
       this.enableMocking = false,
       this.partnerId,
       this.environment = ShieldEnvironment.prod,
-      this.logLevel = ShieldLogLevel.none});
+      this.logLevel = ShieldLogLevel.none,
+      this.defaultBlockedDialog});
 }

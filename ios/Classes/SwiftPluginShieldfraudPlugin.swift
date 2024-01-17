@@ -90,6 +90,13 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             }
             
         }
+
+        if let defaultBlockedDialog = args["defaultBlockedDialog"] as? [String: String], 
+        let title = defaultBlockedDialog["title"], 
+        let body = defaultBlockedDialog["body"] {
+            config.defaultBlockedDialog = BlockedDialog(title: title, body: body)
+        }
+
         Shield.setUp(with: config)
         SwiftPluginShieldfraudPlugin.isShieldInitialized = true
     }
