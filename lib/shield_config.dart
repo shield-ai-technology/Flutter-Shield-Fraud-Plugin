@@ -31,7 +31,6 @@ class ShieldConfig {
   bool enableMocking = false;
   ShieldLogLevel logLevel = ShieldLogLevel.none;
   ShieldEnvironment environment = ShieldEnvironment.prod;
-  bool enableShieldProcess = false;
   bool enableBackgroundListener = false;
   String? partnerId = "";
   ShieldCallback? shieldCallback;
@@ -42,7 +41,6 @@ class ShieldConfig {
       required this.key,
       this.shieldCallback,
       this.enableBackgroundListener = false,
-      this.enableShieldProcess = false,
       this.enableMocking = false,
       this.partnerId,
       this.environment = ShieldEnvironment.prod,

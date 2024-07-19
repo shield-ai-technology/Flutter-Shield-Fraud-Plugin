@@ -29,7 +29,6 @@ class Shield {
         "key": config.key,
         "registerCallback": config.shieldCallback != null,
         "enableBackgroundListener": config.enableBackgroundListener,
-        "enableShieldProcess": config.enableShieldProcess,
         "enableMocking": config.enableMocking,
         "partnerId": config.partnerId,
         "environment": environment,

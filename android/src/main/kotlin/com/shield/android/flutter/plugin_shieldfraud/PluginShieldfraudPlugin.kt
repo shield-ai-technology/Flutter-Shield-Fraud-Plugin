@@ -103,9 +103,6 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
         val siteID: String = call.argument("siteID") ?: return
         val secretKey: String = call.argument("key") ?: return
         val builder = Shield.Builder(activity, siteID, secretKey)
-        call.argument<Boolean>("enableShieldProcess")?.let {
-            builder.enableShieldProcess()
-        }
         call.argument<Boolean>("enableMocking")?.let {
             if (it) builder.enableMocking()
         }
