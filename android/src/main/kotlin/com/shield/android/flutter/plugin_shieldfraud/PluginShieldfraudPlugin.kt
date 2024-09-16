@@ -10,6 +10,8 @@ import com.shield.android.Shield
 import com.shield.android.ShieldCallback
 import com.shield.android.ShieldException
 import com.shield.android.BlockedDialog
+import com.shield.android.ShieldCrossPlatformHelper
+import com.shield.android.ShieldCrossPlatformParams
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 
@@ -53,6 +55,7 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             "initShieldFraud" -> {
+                setCrossPlatformParameters(BuildConfig.CROSS_PLATFORM_NAME, BuildConfig.CROSS_PLATFORM_VERSION)
                 initShieldFraud(call)
             }
             "getSessionID" -> {
@@ -217,6 +220,10 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
         } catch (e: Exception) {
             result.error("0", e.localizedMessage ?: "failed to send device signature", null)
         }
+    }
+
+    private fun setCrossPlatformParameters(name: String, verison: String) {
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(ShieldCrossPlatformParams(name, verison))
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
