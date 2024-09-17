@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_shieldfraud (1.0.11):
+    - Flutter
+    - ShieldFraud
+  - ShieldFraud (1.5.29)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_shieldfraud (from `.symlinks/plugins/flutter_shieldfraud/ios`)
+
+SPEC REPOS:
+  trunk:
+    - ShieldFraud
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_shieldfraud:
+    :path: ".symlinks/plugins/flutter_shieldfraud/ios"
+
+SPEC CHECKSUMS:
+  Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
+  flutter_shieldfraud: cb347f99b83f7be762f267bbb55fbd5af5d5c5b0
+  ShieldFraud: 7d907d62f3c31c20943142a139778cb3708472f9
+
+PODFILE CHECKSUM: d08e30077a700e78308d8611dd3c9a470302f88a
+
+COCOAPODS: 1.12.1
