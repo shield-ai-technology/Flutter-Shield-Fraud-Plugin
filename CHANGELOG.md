@@ -1,3 +1,7 @@
+### 1.0.13
+
+- Fixed Flutter sdk referencing removed variable
+
 ### 1.0.12
 
 - Implemented BlockedDialog for iOS & Android
