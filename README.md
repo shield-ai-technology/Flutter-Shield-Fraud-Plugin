@@ -20,11 +20,11 @@ There are four steps to getting started with the SHIELD SDK:
 ### Integrate the SDK
 
 The SHIELD FLUTTER SDK is compatible with Android and iOS apps supporting flutter version starting from 1.20.0.
-You should ensure that you add flutter_shieldfraud as a dependency in your flutter project's pubsepc.yaml
+You should ensure that you add flutter_shieldfraud_ard as a dependency in your flutter project's pubsepc.yaml
 
 ```
 dependencies:
-  flutter_shieldfraud: ^1.0.13
+  flutter_shieldfraud_ard: ^1.0.0
 ```
 
 You should then run flutter packages get or update your packages in IntelliJ.

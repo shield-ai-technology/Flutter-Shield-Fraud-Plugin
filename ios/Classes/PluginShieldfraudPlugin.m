@@ -1,6 +1,6 @@
 #import "PluginShieldfraudPlugin.h"
-#if __has_include(<flutter_shieldfraud/flutter_shieldfraud-Swift.h>)
-#import <flutter_shieldfraud/flutter_shieldfraud-Swift.h>
+#if __has_include(<flutter_shieldfraud_ard/flutter_shieldfraud-Swift.h>)
+#import <flutter_shieldfraud_ard/flutter_shieldfraud-Swift.h>
 #else
 // Support project import fallback if the generated compatibility header
 // is not copied when this plugin is created as a library.
