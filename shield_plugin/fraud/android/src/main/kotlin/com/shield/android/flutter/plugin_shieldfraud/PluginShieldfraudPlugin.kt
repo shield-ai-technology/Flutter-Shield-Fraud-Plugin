@@ -55,6 +55,7 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
             "initShieldFraud" -> {
                 initShieldFraud(call)
             }
+
             "getSessionID" -> {
                 try {
                     val sessionId = Shield.getInstance().sessionId;
@@ -63,22 +64,27 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
                     result.error("100", "Error getting session Id", null);
                 }
             }
+
             "getDeviceResult" -> {
                 getDeviceResult(result)
             }
+
             "sendAttributes" -> {
                 val screenName: String = call.argument("screenName") ?: return
                 val data: HashMap<String, String> = call.argument("attributes") ?: return
                 sendAttributes(screenName, data, result)
             }
+
             "sendDeviceSignature" -> {
                 val screenName: String = call.argument("screenName") ?: return
                 sendDeviceSignature(screenName, result)
             }
+
             "isShieldInitialized" -> {
                 val isShieldInitialized = isShieldInitialized();
                 result.success(isShieldInitialized)
             }
+
             else -> {
                 result.notImplemented()
             }
@@ -115,7 +121,7 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
 
         call.argument<HashMap<String, String>>("defaultBlockedDialog")?.let {
             if (it != null)
-            builder.setAutoBlockDialog(BlockedDialog(it["title"], it["body"]))
+                builder.setAutoBlockDialog(BlockedDialog(it["title"], it["body"]))
         }
 
         call.argument<Boolean>("registerCallback")?.let {
@@ -129,8 +135,8 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
 
                     override fun onFailure(p0: ShieldException?) {
                         val error = hashMapOf<String, Any>()
-                        error["message"] = p0?.message?:""
-                        error["code"] = p0?.code?:0
+                        error["message"] = p0?.message ?: ""
+                        error["code"] = p0?.code ?: 0
                         Handler(Looper.getMainLooper()).post {
                             channel.invokeMethod("setDeviceResultError", error)
                         }
@@ -196,7 +202,7 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
 
             override fun onFailure(p0: ShieldException?) {
                 result.error(
-                    p0?.code?.toString()?:"0",
+                    p0?.code?.toString() ?: "0",
                     p0?.localizedMessage ?: "failed to send attributes",
                     null
                 )

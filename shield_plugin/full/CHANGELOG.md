@@ -22,7 +22,7 @@
 
 ### 1.0.8
 
-- Fix crash for android plugin with getDeviceResult 
+- Fix crash for android plugin with getDeviceResult
 - Bump native Android and iOS versions to 1.5.35 and 1.5.22
 
 ### 1.0.7
