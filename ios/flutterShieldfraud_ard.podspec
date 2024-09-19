@@ -3,7 +3,7 @@
 # Run `pod lib lint shieldfraud.podspec` to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'flutter_shieldfraud_ard'
+  s.name             = 'flutterShieldfraud_ard'
   s.version          = '1.0.0'
   s.summary          = 'flutter plugin for Shield SDK'
   s.description      = <<-DESC

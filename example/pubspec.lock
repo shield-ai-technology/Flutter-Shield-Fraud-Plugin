@@ -70,7 +70,7 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
-  flutter_shieldfraud_ard:
+  flutterShieldfraud_ard:
     dependency: "direct main"
     description:
       path: ".."
