@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/flutterShieldfraud_ard.iml" filepath="$PROJECT_DIR$/flutterShieldfraud_ard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/flutter_shieldfraud_adv.iml" filepath="$PROJECT_DIR$/flutter_shieldfraud_adv.iml" />
       <module fileurl="file://$PROJECT_DIR$/android/plugin_shieldfraud_android.iml" filepath="$PROJECT_DIR$/android/plugin_shieldfraud_android.iml" />
       <module fileurl="file://$PROJECT_DIR$/example/android/plugin_shieldfraud_example_android.iml" filepath="$PROJECT_DIR$/example/android/plugin_shieldfraud_example_android.iml" />
     </modules>

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutterShieldfraud_ard/plugin_shieldfraud.dart';
-import 'package:flutterShieldfraud_ard/shield_config.dart';
+import 'package:flutter_shieldfraud_adv/plugin_shieldfraud.dart';
+import 'package:flutter_shieldfraud_adv/shield_config.dart';
 import 'dart:convert';
 
 void main() {
