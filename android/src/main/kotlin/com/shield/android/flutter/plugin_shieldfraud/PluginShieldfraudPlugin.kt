@@ -228,8 +228,8 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
         }
     }
 
-    private fun setCrossPlatformParameters(name: String, verison: String) {
-        ShieldCrossPlatformHelper.setCrossPlatformParameters(ShieldCrossPlatformParams(name, verison))
+    private fun setCrossPlatformParameters(name: String, version: String) {
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(ShieldCrossPlatformParams(name, version))
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
