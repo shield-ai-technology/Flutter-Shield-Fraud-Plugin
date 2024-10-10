@@ -54,8 +54,14 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
+            "setCrossPlatformParameters" -> {
+                val pluginName: String? = call.argument("name")
+                val pluginVersion: String? = call.argument("version")
+                if( pluginName != null && pluginVersion != null) {
+                    setCrossPlatformParameters(pluginName, pluginVersion)
+                }
+            }
             "initShieldFraud" -> {
-                setCrossPlatformParameters(BuildConfig.CROSS_PLATFORM_NAME, BuildConfig.CROSS_PLATFORM_VERSION)
                 initShieldFraud(call)
             }
             "getSessionID" -> {

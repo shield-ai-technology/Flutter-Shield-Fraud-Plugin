@@ -45,8 +45,6 @@ android {
 
     defaultConfig {
         minSdkVersion 16
-        buildConfigField("String", "CROSS_PLATFORM_NAME", "\"Flutter\"")
-        buildConfigField("String", "CROSS_PLATFORM_VERSION", "\"$version\"")
     }
 }
 
