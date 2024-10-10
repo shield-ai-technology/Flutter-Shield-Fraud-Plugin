@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:yaml/yaml.dart';
 import 'shield_config.dart';
 
 class Shield {
@@ -24,6 +26,19 @@ class Shield {
           environment = "prod";
           break;
       }
+
+      print("\n ayonya before initShieldFraud call in dart");
+
+      Future<Map> conf = loadConfig('../pubspec.yaml');
+      conf.then((Map config) {
+        print(config['name']);
+        print(config['description']);
+        print(config['version']);
+        print(config['author']);
+        print(config['homepage']);
+        print(config['dependencies']);
+      });
+
       await _channel.invokeMethod("initShieldFraud", {
         "siteID": config.siteID,
         "key": config.key,
@@ -44,6 +59,24 @@ class Shield {
       //something went wrong during initialization. nothing we can do
     }
     return;
+  }
+
+  static Future<Map<String, dynamic>> loadConfig(String filePath) async {
+    try {
+      final File file = File('/Users/ayonya/github/flutter-copy/shield-f-plugin/pubspec.yaml');
+      final String yamlString = await file.readAsString();
+
+      print(yamlString); // Print the content of the pubspec.yaml
+
+      final content = await rootBundle.loadString(filePath);
+      final yamlMap = loadYaml(content);
+      print("\nayonya yaml Map  = " + yamlMap );
+
+      return Map<String, dynamic>.from(yamlMap);
+    } catch (e) {
+      print("Error reading the file: $e");
+      return {};
+    }
   }
 
   static Future<String> get sessionId async {
