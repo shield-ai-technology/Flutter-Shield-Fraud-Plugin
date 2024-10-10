@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter_shieldfraud/generated/plugin_version_info.dart';
 import 'shield_config.dart';
 
 class Shield {
@@ -24,6 +25,9 @@ class Shield {
           environment = "prod";
           break;
       }
+
+      setCrossPlatformParameters();
+
       await _channel.invokeMethod("initShieldFraud", {
         "siteID": config.siteID,
         "key": config.key,
@@ -44,6 +48,13 @@ class Shield {
       //something went wrong during initialization. nothing we can do
     }
     return;
+  }
+
+  static Future<void> setCrossPlatformParameters() async {
+    await _channel.invokeMethod("setCrossPlatformParameters", {
+      "name": PluginBuildInfo.pluginName,
+      "version": PluginBuildInfo.pluginVersion
+    });
   }
 
   static Future<String> get sessionId async {
