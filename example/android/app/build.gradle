@@ -26,7 +26,9 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
+
+    namespace 'com.example.plugin_shieldfraud_example'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
