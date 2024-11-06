@@ -16,7 +16,12 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    if call.method == "initShieldFraud" {
+    if call.method == "setCrossPlatformParameters" {
+        if let args = call.arguments as? [String: Any], let pluginName = args["name"] as? String, let pluginVersion = args["version"] as? String {
+            let params = ShieldCrossPlatformParams(name: pluginName, version: pluginVersion)
+            ShieldCrossPlatformHelper.setCrossPlatformParameters(params)
+        }
+    } else if call.method == "initShieldFraud" {
         self.initShieldFraud(call.arguments)
     } else if call.method == "getSessionID" {
         if SwiftPluginShieldfraudPlugin.isShieldInitialized {
