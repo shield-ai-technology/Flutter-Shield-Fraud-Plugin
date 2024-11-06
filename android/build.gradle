@@ -30,7 +30,10 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 31
 
-    namespace 'com.shield.android.flutter.plugin_shieldfraud'
+    // Conditional for compatibility with AGP <4.2.
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.shield.android.flutter.plugin_shieldfraud'
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
