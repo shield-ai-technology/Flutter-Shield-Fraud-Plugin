@@ -1,7 +1,7 @@
 ### 1.0.14
 
-- Changes to send the cross platform name and version to native SDK
-- Added fix to support namespace field in AGP versions 8.x
+- Minor bug fixes and changes for iOS and Android
+- Added support for AGP v8.x
 
 ### 1.0.13
 
