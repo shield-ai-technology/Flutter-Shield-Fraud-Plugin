@@ -1,3 +1,8 @@
+### 1.0.14
+
+- Changes to send the cross platform name and version to native SDK
+- Added fix to support namespace field in AGP versions 8.x
+
 ### 1.0.13
 
 - Fixed Flutter sdk referencing removed variable
