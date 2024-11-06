@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
    <application
         android:label="plugin_shieldfraud_example"
+       android:networkSecurityConfig="@xml/network_security"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
