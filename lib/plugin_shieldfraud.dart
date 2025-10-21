@@ -21,8 +21,8 @@ class Shield {
         case ShieldEnvironment.prod:
           environment = "prod";
           break;
-        default:
-          environment = "prod";
+        case ShieldEnvironment.staging:
+          environment = "staging";
           break;
       }
 

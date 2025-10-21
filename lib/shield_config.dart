@@ -1,6 +1,6 @@
 enum ShieldLogLevel { none, info, debug, verbose }
 
-enum ShieldEnvironment { dev, prod }
+enum ShieldEnvironment { dev, prod, staging }
 
 typedef OnSuccess = Function(Map<String, dynamic>);
 typedef OnError = Function(ShieldError);
