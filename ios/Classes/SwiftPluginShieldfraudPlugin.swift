@@ -82,7 +82,13 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             config.deviceShieldCallback = self
         }
         if let environment = args["environment"] as? String {
-            config.environment = environment == "dev" ? Environment.dev : Environment.prod
+            if environment == "dev" {
+                config.environment = Environment.dev
+            } else if environment == "staging" {
+                config.environment = Environment.staging
+            } else {
+                config.environment = Environment.prod
+            }
         }
         
         if let logLevel = args["logLevel"] as? String {

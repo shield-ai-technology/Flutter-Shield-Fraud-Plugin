@@ -150,11 +150,18 @@ class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware 
         }
 
         call.argument<String>("environment")?.let {
-            if (it == "dev") {
-                builder.setEnvironment(Shield.ENVIRONMENT_DEV)
-            } else {
-                builder.setEnvironment(Shield.ENVIRONMENT_PROD)
+            val env = when (it) {
+                "dev" -> {
+                    Shield.ENVIRONMENT_DEV
+                }
+                "staging" -> {
+                    Shield.ENVIRONMENT_STAGING
+                }
+                else -> {
+                    Shield.ENVIRONMENT_PROD
+                }
             }
+            builder.setEnvironment(env)
         }
 
         call.argument<String>("logLevel")?.let {
