@@ -85,7 +85,7 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             if environment == "dev" {
                 config.environment = Environment.dev
             } else if environment == "staging" {
-                config.environment = Environment.staging
+                config.environment = Environment.stag
             } else {
                 config.environment = Environment.prod
             }
