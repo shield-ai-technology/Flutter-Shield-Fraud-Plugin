@@ -1,3 +1,7 @@
+### 1.0.15
+
+- Added support for Staging environment.
+
 ### 1.0.14
 
 - Minor bug fixes and changes for iOS and Android
