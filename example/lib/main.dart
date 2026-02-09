@@ -23,23 +23,29 @@ class _MyAppState extends State<MyApp> {
 
     initShield();
 
-    Future.delayed(const Duration(seconds: 2), () async {
-      Shield.latestDeviceResult.then((latestDeviceResult) => {
-            if (latestDeviceResult == null)
-              {print("error ${Shield.latestError?.message}")}
-            else
-              {print("result $latestDeviceResult")}
-          });
-    });
+    // Future.delayed(const Duration(seconds: 10), () async {
+    //   Shield.latestDeviceResult.then((latestDeviceResult) => {
+    //         if (latestDeviceResult == null)
+    //           {print("error ${Shield.latestError?.message}")}
+    //         else
+    //           {print("result $latestDeviceResult")}
+    //       });
+    // });
   }
 
   Future<void> initShield() async {
+    final startTime = DateTime.now();
+    print("start init $startTime");
     ShieldCallback shieldCallback =
         ShieldCallback((Map<String, dynamic> result) {
       setState(() {
         jsonString = const JsonEncoder.withIndent('  ').convert(result);
       });
 
+      final endTime = DateTime.now();
+      print("end init $endTime");
+      final duration = endTime.difference(startTime);
+      print("duration is $duration");
       print("callback result: $result");
     }, (ShieldError error) {
       print("callback error: ${error.message}");
@@ -48,10 +54,10 @@ class _MyAppState extends State<MyApp> {
     data["user_id"] = "12345";
     final valueInt = await Shield.isShieldInitialized;
     ShieldConfig config = ShieldConfig(
-        siteID: "SHIELD_SITE_ID",
-        key: "SHIELD_SECRET_KEY",
+        siteID: "e15494eb4a415d20841c8c5f5a34aa144b2c2b4f",
+        key: "009df86800000000e15494eb4a415d20841c8c5f5a34aa144b2c2b4f",
         shieldCallback: shieldCallback,
-        environment: ShieldEnvironment.prod,
+        environment: ShieldEnvironment.staging,
         logLevel: ShieldLogLevel.debug);
     if (!valueInt) {
       Shield.initShield(config);
@@ -86,9 +92,22 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () {
                     Shield.sendDeviceSignature("test sending device signature")
                         .then((value) => print(
-                            "sending device signature in real time successful: $value"));
+                            "sending device signature in real time successful: $value, session id is ${Shield.sessionId.toString()}"));
+
+                    Future.delayed(const Duration(seconds: 2), () async {
+
+                      Shield.latestDeviceResult.then((latestDeviceResult) => {
+                        if (latestDeviceResult == null)
+                          {print("error ${Shield.latestError?.message}")}
+                        else
+                          {print("result $latestDeviceResult")}
+                      });
+
+                      final sessionId = await Shield.sessionId;
+                      print("session id is $sessionId");
+                    });
                   },
-                  child: const Text("Send attributes"),
+                  child: const Text("Send device signature"),
                 ),
               ),
             ],
