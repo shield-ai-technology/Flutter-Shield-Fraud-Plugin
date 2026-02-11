@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 36
     namespace 'com.example.plugin_shieldfraud_example'
 
     signingConfigs {
