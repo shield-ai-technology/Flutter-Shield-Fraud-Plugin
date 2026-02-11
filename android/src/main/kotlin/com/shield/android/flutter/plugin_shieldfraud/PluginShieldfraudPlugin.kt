@@ -62,6 +62,13 @@ class PluginShieldfraudPlugin :
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
 
         when (call.method) {
+            "setCrossPlatformParameters" -> {
+                val pluginName: String? = call.argument("name")
+                val pluginVersion: String? = call.argument("version")
+                if( pluginName != null && pluginVersion != null) {
+                    setCrossPlatformParameters(pluginName, pluginVersion)
+                }
+            }
 
             "initShieldFraud" -> initShieldFraud(call, result)
 
@@ -284,6 +291,11 @@ class PluginShieldfraudPlugin :
                 }
             }
         }
+    }
+
+    // ---------- CROSS PLATFORM PARAMETERS ----------
+    private fun setCrossPlatformParameters(name: String, version: String) {
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(ShieldCrossPlatformParams(name, version))
     }
 
 

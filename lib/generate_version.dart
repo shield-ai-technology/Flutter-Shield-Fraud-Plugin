@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:yaml/yaml.dart';
 
 void main() {
@@ -24,5 +25,7 @@ void main() {
   }
 
   outputFile.writeAsStringSync(dartContent);
-  print('Generated file \'generated/plugin_version_info.dart\' with version $version and package name $pluginName.');
+  if (kDebugMode) {
+    print('Generated file \'generated/plugin_version_info.dart\' with version $version and package name $pluginName.');
+  }
 }

@@ -135,7 +135,7 @@ class _MyAppState extends State<MyApp> {
       log("Manual Signature Triggered");
       final success = await Shield.sendDeviceSignature("manually triggered");
       final sessionId = await Shield.sessionId;
-      log("Signature success = $success");
+      log("Signature success = $success ::: sessionId = $sessionId");
     } catch (e) {
       log("Signature Error $e");
     } finally {
