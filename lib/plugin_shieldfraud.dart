@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_shieldfraud/generated/plugin_version_info.dart';
+import 'package:flutter/foundation.dart';
 import 'shield_config.dart';
 
 class Shield {
@@ -19,14 +20,14 @@ class Shield {
       String environment = config.environment.name;
       String logLevel = config.logLevel.name;
 
-      setCrossPlatformParameters();
+      unawaited(setCrossPlatformParameters());
 
       await _channel.invokeMethod("initShieldFraud", {
         "siteID": config.siteID,
         "key": config.key,
         "registerCallback": config.shieldCallback != null,
-        "enableBackgroundListener": config.enableBackgroundListener,
-        "enableMocking": config.enableMocking,
+        "needBackgroundListener": config.needBackgroundListener,
+        "blockScreenRecording": config.blockScreenRecording,
         "partnerId": config.partnerId,
         "environment": environment,
         "logLevel": logLevel,
@@ -37,20 +38,28 @@ class Shield {
         }
             : null,
       });
-    } catch (_) {}
+    } catch (e,s) {
+      // Need a method to log this error
+      _internalLog("initShield failed", e, s);
+    }
   }
 
   static Future<void> setCrossPlatformParameters() async {
-    await _channel.invokeMethod("setCrossPlatformParameters", {
-      "name": PluginBuildInfo.pluginName,
-      "version": PluginBuildInfo.pluginVersion
-    });
+    try {
+      await _channel.invokeMethod("setCrossPlatformParameters", {
+        "name": PluginBuildInfo.pluginName,
+        "version": PluginBuildInfo.pluginVersion
+      });
+    } catch (e, s) {
+      _internalLog("setCrossPlatformParameters failed", e, s);
+    }
   }
 
   static Future<String> get sessionId async {
     try {
       return await _channel.invokeMethod('getSessionID');
-    } catch (_) {
+    } catch (e,s) {
+      _internalLog("getSessionID failed", e, s);
       return "";
     }
   }
@@ -61,12 +70,14 @@ class Shield {
     try {
       final result = await _channel.invokeMethod('getDeviceResult');
       latestError = null;
+      if (result == null) return null;
       return json.decode(result);
     } on PlatformException catch (e) {
       latestError =
           ShieldError(int.tryParse(e.code) ?? 0, e.message ?? "Unknown error");
-    } catch (_) {
-      latestError = ShieldError(0, "Unknown error");
+    } catch (e,s) {
+      _internalLog("latestDeviceResult failed", e, s);
+      latestError = ShieldError(0, "Unknown error ${e.toString()}");
     }
     return null;
   }
@@ -85,26 +96,37 @@ class Shield {
       );
 
       return result as String?;
-    } catch (e) {
+    } catch (e,s) {
+      _internalLog("sendAttributes failed", e, s);
       return null;
     }
   }
 
 
-  static Future<bool> sendDeviceSignature(String screenName) async {
+  static Future<String?> sendDeviceSignature(String screenName) async {
     try {
-      return await _channel.invokeMethod("sendDeviceSignature", {
-        "screenName": screenName
-      }).timeout(const Duration(seconds: 30), onTimeout: () => false);
-    } catch (_) {
-      return false;
+      final result = await _channel
+          .invokeMethod<String>(
+        "sendDeviceSignature",
+        {"screenName": screenName},
+      )
+          .timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => null,
+      );
+
+      return result;
+    }  catch (e, s) {
+      _internalLog("sendDeviceSignature failed", e, s);
+      return null;
     }
   }
 
   static Future<bool> get isShieldInitialized async {
     try {
       return await _channel.invokeMethod("isShieldInitialized");
-    } catch (_) {
+    } catch (e,s) {
+      _internalLog("isShieldInitialized failed", e, s);
       return false;
     }
   }
@@ -123,8 +145,17 @@ class Shield {
           _shieldCallback?.onError(shieldError);
           break;
       }
-    } catch (_) {
-      _shieldCallback?.onError(ShieldError(0, "Unknown error"));
+    } catch (e,s) {
+      _internalLog("methodHandler failed", e, s);
+      _shieldCallback?.onError(ShieldError(0, "Unknown error: ${e.toString()}"));
     }
+  }
+
+  static void _internalLog(String message, Object error, StackTrace stack) {
+    assert(() {
+      debugPrint("[ShieldFlutter] $message → $error");
+      debugPrintStack(stackTrace: stack);
+      return true;
+    }());
   }
 }

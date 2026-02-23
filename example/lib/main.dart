@@ -70,6 +70,7 @@ class _MyAppState extends State<MyApp> {
           shieldCallback: shieldCallback,
           environment: ShieldEnvironment.prod,
           logLevel: ShieldLogLevel.verbose,
+          blockScreenRecording: true
         );
 
         // Timeout protection (prevents infinite spinner)
@@ -103,7 +104,6 @@ class _MyAppState extends State<MyApp> {
   Future<void> _refreshLatestResult() async {
     try {
       log("Swipe refresh triggered");
-
       final latest = await Shield.latestDeviceResult;
 
       if (!mounted) return;
@@ -133,8 +133,8 @@ class _MyAppState extends State<MyApp> {
     try {
       setState(() => _isSending = true);
       log("Manual Signature Triggered");
-      final success = await Shield.sendDeviceSignature("manually triggered");
-      final sessionId = await Shield.sessionId;
+      final sessionId = await Shield.sendDeviceSignature("manual");
+      final success = sessionId != null;
       log("Signature success = $success ::: sessionId = $sessionId");
     } catch (e) {
       log("Signature Error $e");

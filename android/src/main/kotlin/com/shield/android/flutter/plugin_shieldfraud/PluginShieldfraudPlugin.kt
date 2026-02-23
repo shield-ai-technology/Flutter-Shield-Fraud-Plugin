@@ -1,6 +1,7 @@
 package com.shield.android.flutter.plugin_shieldfraud
 
 import android.app.Activity
+import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import com.shield.android.*
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.cancel
+import android.util.Log
 
 
 
@@ -28,7 +30,9 @@ class PluginShieldfraudPlugin :
     }
 
     private lateinit var channel: MethodChannel
-    private lateinit var activity: Activity
+    private lateinit var application: Application
+    private var activity: Activity? = null
+    private var isInitializing = false
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -40,8 +44,12 @@ class PluginShieldfraudPlugin :
     // ---------- Lifecycle ----------
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        application = binding.applicationContext as Application
         channel = MethodChannel(binding.binaryMessenger, "plugin_shieldfraud")
         channel.setMethodCallHandler(this)
+        if (shield != null) {
+            startDeviceResultListener()
+        }
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -49,13 +57,20 @@ class PluginShieldfraudPlugin :
         channel.setMethodCallHandler(null)
     }
 
+    //We do not need to use activity we use application directly but keeping if we need it in the future
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
     }
 
-    override fun onDetachedFromActivity() {}
-    override fun onDetachedFromActivityForConfigChanges() {}
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {}
+    override fun onDetachedFromActivity() {
+        activity = null
+    }
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
 
     // ---------- Method Channel ----------
 
@@ -68,6 +83,7 @@ class PluginShieldfraudPlugin :
                 if( pluginName != null && pluginVersion != null) {
                     setCrossPlatformParameters(pluginName, pluginVersion)
                 }
+                result.success(null)
             }
 
             "initShieldFraud" -> initShieldFraud(call, result)
@@ -126,23 +142,55 @@ class PluginShieldfraudPlugin :
     private fun initShieldFraud(call: MethodCall, result: MethodChannel.Result) {
 
         if (shield != null) {
+            Log.d(TAG, "Shield already initialized, reusing existing instance")
             result.success(null)
             return
         }
 
-        val siteId = call.argument<String>("siteID") ?: return
-        val key = call.argument<String>("key") ?: return
+        if (isInitializing) {
+            Log.d(TAG, "Shield initialization already in progress")
+            result.success(null)
+            return
+        }
+
+        isInitializing = true
+
+        val siteId = call.argument<String>("siteID")
+        val key = call.argument<String>("key")
+        val needBackgroundListener = call.argument<Boolean>("needBackgroundListener") == true
+        val blockScreenRecording = call.argument<Boolean>("blockScreenRecording") == true
+        val partnerId = call.argument<String>("partnerId")
+
+        if (siteId.isNullOrEmpty() || key.isNullOrEmpty()) {
+            isInitializing = false
+            result.error("SHIELD_ERROR", "Missing siteID or key", null)
+            return
+        }
 
         val config = ShieldConfig(siteId, key).apply {
             environment = mapEnvironment(call.argument("environment"))
             logLevel = mapLogLevel(call.argument("logLevel"))
+            this.needBackgroundListener = needBackgroundListener
+            this.blockScreenRecording = blockScreenRecording
+            partnerId?.let { this.partnerId = it }
+        }
+
+        val blockedDialogMap = call.argument<HashMap<String, String>>("defaultBlockedDialog")
+
+        blockedDialogMap?.let {
+            val title = it["title"]
+            val body = it["body"]
+
+            if (!title.isNullOrEmpty() && !body.isNullOrEmpty()) {
+                config.blockedDialog = BlockedDialog(title, body)
+            }
         }
 
         val registerCallback = call.argument<Boolean>("registerCallback") == true
         shield = if (registerCallback) {
 
             ShieldFactory.createShieldWithCallback(
-                activity.application,
+                application,
                 config
             ) { sdkResult ->
                 when (sdkResult) {
@@ -168,9 +216,12 @@ class PluginShieldfraudPlugin :
             }
 
         } else {
-            ShieldFactory.createShield(activity.application, config)
+            ShieldFactory.createShield(application, config)
         }
-        startDeviceResultListener()
+        if (!registerCallback) {
+            startDeviceResultListener()
+        }
+        isInitializing = false
         result.success(null)
     }
 
@@ -267,8 +318,10 @@ class PluginShieldfraudPlugin :
                 val res = flow.first()
                 when (res) {
                     is Result.Success<*> -> {
+                        val sessionId = res.data as String
+                        sessionIdCache = sessionId
                         mainHandler.post {
-                            result.success(true)
+                            result.success(sessionId)
                         }
                     }
                     is Result.Failure<*> -> {
