@@ -65,19 +65,22 @@ class _MyAppState extends State<MyApp> {
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
         final config = ShieldConfig(
-          siteID: "59947973924580a1bf14766e74331641870de57f",
-          key: "242236650000000059947973924580a1bf14766e74331641870de57f",
-          shieldCallback: shieldCallback,
-          environment: ShieldEnvironment.prod,
-          logLevel: ShieldLogLevel.verbose,
-          blockScreenRecording: true
+            siteID: "59947973924580a1bf14766e74331641870de57f",
+            key: "242236650000000059947973924580a1bf14766e74331641870de57f",
+            shieldCallback: shieldCallback,
+            environment: ShieldEnvironment.prod,
+            logLevel: ShieldLogLevel.verbose,
+            blockScreenRecording: true
         );
 
         // Timeout protection (prevents infinite spinner)
-        await Future.any<void>([
-          Shield.initShield(config),
-          Future.delayed(const Duration(seconds: 12)),
+        final completed = await Future.any([
+          Shield.initShield(config).then((_) => true),
+          Future.delayed(const Duration(seconds: 15), () => false),
         ]);
+        if (!completed && mounted) {
+          setState(() => _isLoading = false);
+        }
       } else {
         final latest = await Shield.latestDeviceResult;
         if (!mounted) return;
@@ -104,6 +107,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _refreshLatestResult() async {
     try {
       log("Swipe refresh triggered");
+
       final latest = await Shield.latestDeviceResult;
 
       if (!mounted) return;
