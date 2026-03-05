@@ -9,3 +9,10 @@ build/
 /.idea/workspace.xml
 /.idea/libraries
 /.idea
+
+# FVM Version Cache
+.fvm/.fvmrc
+
+# FVM
+.fvm/
+.fvmrc
