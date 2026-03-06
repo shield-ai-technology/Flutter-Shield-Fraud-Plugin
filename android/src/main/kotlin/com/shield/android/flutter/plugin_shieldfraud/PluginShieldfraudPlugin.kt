@@ -2,8 +2,7 @@ package com.shield.android.flutter.plugin_shieldfraud
 
 import android.app.Activity
 import android.app.Application
-import android.os.Handler
-import android.os.Looper
+import kotlinx.coroutines.withContext
 import com.shield.android.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -29,12 +28,12 @@ class PluginShieldfraudPlugin :
     private lateinit var channel: MethodChannel
     private lateinit var application: Application
     private var activity: Activity? = null
-    private val mainHandler = Handler(Looper.getMainLooper())
+//    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var shield: Shield? = null
     private var sessionIdCache: String? = null
 
-    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // ---------------- LIFECYCLE ----------------
 
@@ -46,6 +45,7 @@ class PluginShieldfraudPlugin :
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        pluginScope.cancel()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -120,8 +120,7 @@ class PluginShieldfraudPlugin :
             }
 
             "isShieldInitialized" -> {
-                val init = shield != null
-                result.success(init)
+                result.success(shield != null)
             }
 
             else -> result.notImplemented()
@@ -160,26 +159,29 @@ class PluginShieldfraudPlugin :
             shield =
                 if (registerCallback) {
                     ShieldFactory.createShieldWithCallback(application, config) { sdkResult ->
-                        when (sdkResult) {
+                        pluginScope.launch {
+                            when (sdkResult) {
 
-                            is Result.Success -> {
-                                sessionIdCache = sdkResult.data.sessionId
+                                is Result.Success -> {
+                                    sessionIdCache = sdkResult.data.sessionId
 
-                                mainHandler.post {
-                                    channel.invokeMethod(
-                                        "setDeviceResult",
-                                        sdkResult.data.data.toString()
-                                    )
+                                    withContext(Dispatchers.Main) {
+                                        channel.invokeMethod(
+                                            "setDeviceResult",
+                                            sdkResult.data.data.toString()
+                                        )
+                                    }
                                 }
-                            }
 
-                            is Result.Failure -> {
-                                val err = hashMapOf<String, Any>()
-                                err["message"] = sdkResult.error.errorMessage ?: ""
-                                err["code"] = sdkResult.error.errorCode ?: 0
+                                is Result.Failure -> {
+                                    val err = hashMapOf<String, Any>(
+                                        "message" to (sdkResult.error.errorMessage ?: ""),
+                                        "code" to (sdkResult.error.errorCode ?: 0)
+                                    )
 
-                                mainHandler.post {
-                                    channel.invokeMethod("setDeviceResultError", err)
+                                    withContext(Dispatchers.Main) {
+                                        channel.invokeMethod("setDeviceResultError", err)
+                                    }
                                 }
                             }
                         }
@@ -205,7 +207,7 @@ class PluginShieldfraudPlugin :
 
         val localShield = shield ?: return
 
-        mainScope.launch {
+        pluginScope.launch {
 
             localShield.onDeviceResult().collect { res ->
 
@@ -215,7 +217,7 @@ class PluginShieldfraudPlugin :
 
                         sessionIdCache = res.data.sessionId
 
-                        mainHandler.post {
+                        withContext(Dispatchers.Main) {
                             channel.invokeMethod(
                                 "setDeviceResult",
                                 res.data.data.toString()
@@ -225,11 +227,12 @@ class PluginShieldfraudPlugin :
 
                     is Result.Failure -> {
 
-                        val err = hashMapOf<String, Any>()
-                        err["message"] = res.error.errorMessage ?: ""
-                        err["code"] = res.error.errorCode ?: 0
+                        val err = hashMapOf<String, Any>(
+                            "message" to (res.error.errorMessage ?: ""),
+                            "code" to (res.error.errorCode ?: 0)
+                        )
 
-                        mainHandler.post {
+                        withContext(Dispatchers.Main) {
                             channel.invokeMethod("setDeviceResultError", err)
                         }
                     }
@@ -251,19 +254,22 @@ class PluginShieldfraudPlugin :
             return
         }
 
-        mainScope.launch {
+        pluginScope.launch {
             try {
                 val res = localShield.sendAttributes(screenName, data).first()
-                when (res) {
 
+                when (res) {
                     is Result.Success<*> -> {
                         val sessionId = res.data as String
                         sessionIdCache = sessionId
-                        mainHandler.post { result.success(sessionId) }
+
+                        withContext(Dispatchers.Main) {
+                            result.success(sessionId)
+                        }
                     }
 
                     is Result.Failure<*> -> {
-                        mainHandler.post {
+                        withContext(Dispatchers.Main) {
                             result.error(
                                 res.error.errorCode.toString(),
                                 res.error.errorMessage ?: "Unknown error",
@@ -272,9 +278,8 @@ class PluginShieldfraudPlugin :
                         }
                     }
                 }
-
             } catch (e: Throwable) {
-                mainHandler.post {
+                withContext(Dispatchers.Main) {
                     result.error("SHIELD_ERROR", e.message, null)
                 }
             }
@@ -293,20 +298,22 @@ class PluginShieldfraudPlugin :
             return
         }
 
-        mainScope.launch {
+        pluginScope.launch {
             try {
                 val res = localShield.sendDeviceSignature(screenName).first()
 
                 when (res) {
-
                     is Result.Success<*> -> {
                         val sessionId = res.data as String
                         sessionIdCache = sessionId
-                        mainHandler.post { result.success(sessionId) }
+
+                        withContext(Dispatchers.Main) {
+                            result.success(sessionId)
+                        }
                     }
 
                     is Result.Failure<*> -> {
-                        mainHandler.post {
+                        withContext(Dispatchers.Main) {
                             result.error(
                                 res.error.errorCode.toString(),
                                 res.error.errorMessage ?: "Signature failed",
@@ -315,9 +322,8 @@ class PluginShieldfraudPlugin :
                         }
                     }
                 }
-
             } catch (e: Throwable) {
-                mainHandler.post {
+                withContext(Dispatchers.Main) {
                     result.error("SHIELD_ERROR", e.message, null)
                 }
             }
