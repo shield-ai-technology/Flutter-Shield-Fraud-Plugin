@@ -1,3 +1,7 @@
+### 1.0.16
+
+- Added support for flutter 3.x and Dart 3.x
+
 ### 1.0.15
 
 - Added support for Staging environment.
