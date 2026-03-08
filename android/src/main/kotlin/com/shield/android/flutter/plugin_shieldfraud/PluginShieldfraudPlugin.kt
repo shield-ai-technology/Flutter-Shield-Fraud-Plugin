@@ -1,253 +1,355 @@
 package com.shield.android.flutter.plugin_shieldfraud
 
 import android.app.Activity
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
-import androidx.annotation.NonNull
-import com.shield.android.Shield
-import com.shield.android.ShieldCallback
-import com.shield.android.ShieldException
-import com.shield.android.BlockedDialog
-import com.shield.android.ShieldCrossPlatformHelper
-import com.shield.android.ShieldCrossPlatformParams
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.android.FlutterFragmentActivity
-
+import android.app.Application
+import kotlinx.coroutines.withContext
+import com.shield.android.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.BinaryMessenger
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
-import org.json.JSONObject
-import java.lang.IllegalStateException
-import java.util.concurrent.atomic.AtomicBoolean
+import io.flutter.plugin.common.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.cancel
 
+class PluginShieldfraudPlugin :
+    FlutterPlugin,
+    MethodChannel.MethodCallHandler,
+    ActivityAware {
 
-/** PluginShieldfraudPlugin */
-class PluginShieldfraudPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
-    /// The MethodChannel that will the communication between Flutter and native Android
-    ///
-    /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-    /// when the Flutter Engine is detached from the Activity
+    companion object {
+        private const val TAG = "ShieldFlutterPlugin"
+    }
+
     private lateinit var channel: MethodChannel
-    private lateinit var binaryMessenger: BinaryMessenger
-    private lateinit var activity: Activity
+    private lateinit var application: Application
+    private var activity: Activity? = null
+//    private val mainHandler = Handler(Looper.getMainLooper())
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        binaryMessenger = flutterPluginBinding.binaryMessenger
+    private var shield: Shield? = null
+    private var sessionIdCache: String? = null
+
+    private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // ---------------- LIFECYCLE ----------------
+
+    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        application = binding.applicationContext as Application
+        channel = MethodChannel(binding.binaryMessenger, "plugin_shieldfraud")
+        channel.setMethodCallHandler(this)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+        pluginScope.cancel()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
-        channel = MethodChannel(binaryMessenger, "plugin_shieldfraud")
-        channel.setMethodCallHandler(this)
     }
 
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
+    override fun onDetachedFromActivity() {
+        activity = null
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    // ---------------- METHOD CHANNEL ----------------
+
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+
             "setCrossPlatformParameters" -> {
-                val pluginName: String? = call.argument("name")
-                val pluginVersion: String? = call.argument("version")
-                if( pluginName != null && pluginVersion != null) {
-                    setCrossPlatformParameters(pluginName, pluginVersion)
+                val name = call.argument<String>("name")
+                val version = call.argument<String>("version")
+                if (name != null && version != null) {
+                    setCrossPlatformParameters(name, version)
                 }
+                result.success(null)
             }
-            "initShieldFraud" -> {
-                initShieldFraud(call)
-            }
+
+            "initShieldFraud" -> initShieldFraud(call, result)
+
             "getSessionID" -> {
+                val id = sessionIdCache ?: shield?.sessionId ?: ""
+                result.success(id)
+            }
+
+            "getDeviceResult" -> {
+
+                val localShield = shield
+
+                if (localShield == null) {
+                    result.success(null)
+                    return
+                }
+
                 try {
-                    val sessionId = Shield.getInstance().sessionId;
-                    result.success(sessionId)
-                } catch (e: Exception) {
-                    result.error("100", "Error getting session Id", null);
+                    val latest = localShield.latestDeviceResult
+
+                    result.success(latest?.toString())
+                } catch (e: Throwable) {
+                    result.error("SHIELD_ERROR", e.message, null)
                 }
             }
-            "getDeviceResult" -> {
-                getDeviceResult(result)
-            }
+
             "sendAttributes" -> {
-                val screenName: String = call.argument("screenName") ?: return
-                val data: HashMap<String, String> = call.argument("attributes") ?: return
-                sendAttributes(screenName, data, result)
+                val screenName = call.argument<String>("screenName")
+                val attrs = call.argument<HashMap<String, String>>("attributes")
+                if (screenName == null || attrs == null) {
+                    result.error("SHIELD_ERROR", "Invalid arguments", null)
+                    return
+                }
+
+                sendAttributes(screenName, attrs, result)
             }
+
             "sendDeviceSignature" -> {
-                val screenName: String = call.argument("screenName") ?: return
+                val screenName = call.argument<String>("screenName") ?: ""
                 sendDeviceSignature(screenName, result)
             }
+
             "isShieldInitialized" -> {
-                val isShieldInitialized = isShieldInitialized();
-                result.success(isShieldInitialized)
+                result.success(shield != null)
             }
-            else -> {
-                result.notImplemented()
-            }
+
+            else -> result.notImplemented()
         }
     }
 
+    // ---------------- INIT ----------------
 
-    private fun isShieldInitialized(): Boolean {
-        return try {
-            Shield.getInstance() != null
-        } catch (exception: IllegalStateException) {
-            //Shield is not initialized yet.
-            false
-        }
-    }
-
-    private fun initShieldFraud(call: MethodCall) {
-        if (isShieldInitialized()) {
+    private fun initShieldFraud(call: MethodCall, result: MethodChannel.Result) {
+        if (shield != null) {
+            result.success(null)
             return
         }
 
-        val siteID: String = call.argument("siteID") ?: return
-        val secretKey: String = call.argument("key") ?: return
-        val builder = Shield.Builder(activity, siteID, secretKey)
-        call.argument<Boolean>("enableMocking")?.let {
-            if (it) builder.enableMocking()
-        }
-        call.argument<Boolean>("enableBackgroundListener")?.let {
-            if (it) builder.enableBackgroundListener()
-        }
-        call.argument<String>("partnerId")?.let {
-            if (it.isNotEmpty()) builder.setPartnerId(it)
+        val siteId = call.argument<String>("siteID")
+        val key = call.argument<String>("key")
+
+        if (siteId.isNullOrEmpty() || key.isNullOrEmpty()) {
+            result.error("SHIELD_ERROR", "Missing siteID or key", null)
+            return
         }
 
-        call.argument<HashMap<String, String>>("defaultBlockedDialog")?.let {
-            if (it != null)
-            builder.setAutoBlockDialog(BlockedDialog(it["title"], it["body"]))
-        }
+        try {
 
-        call.argument<Boolean>("registerCallback")?.let {
-            if (it) {
-                builder.registerDeviceShieldCallback(object : ShieldCallback<JSONObject> {
-                    override fun onSuccess(p0: JSONObject?) {
-                        Handler(Looper.getMainLooper()).post {
-                            channel.invokeMethod("setDeviceResult", p0?.toString())
+            val config = ShieldConfig(siteId, key).apply {
+                environment = mapEnvironment(call.argument("environment"))
+                logLevel = mapLogLevel(call.argument("logLevel"))
+                needBackgroundListener =
+                    call.argument<Boolean>("needBackgroundListener") == true
+                blockScreenRecording =
+                    call.argument<Boolean>("blockScreenRecording") == true
+            }
+
+            val registerCallback = call.argument<Boolean>("registerCallback") == true
+
+            shield =
+                if (registerCallback) {
+                    ShieldFactory.createShieldWithCallback(application, config) { sdkResult ->
+                        pluginScope.launch {
+                            when (sdkResult) {
+
+                                is Result.Success -> {
+                                    sessionIdCache = sdkResult.data.sessionId
+
+                                    withContext(Dispatchers.Main) {
+                                        channel.invokeMethod(
+                                            "setDeviceResult",
+                                            sdkResult.data.data.toString()
+                                        )
+                                    }
+                                }
+
+                                is Result.Failure -> {
+                                    val err = hashMapOf<String, Any>(
+                                        "message" to (sdkResult.error.errorMessage ?: ""),
+                                        "code" to (sdkResult.error.errorCode ?: 0)
+                                    )
+
+                                    withContext(Dispatchers.Main) {
+                                        channel.invokeMethod("setDeviceResultError", err)
+                                    }
+                                }
+                            }
                         }
-                    }
-
-                    override fun onFailure(p0: ShieldException?) {
-                        val error = hashMapOf<String, Any>()
-                        error["message"] = p0?.message?:""
-                        error["code"] = p0?.code?:0
-                        Handler(Looper.getMainLooper()).post {
-                            channel.invokeMethod("setDeviceResultError", error)
-                        }
-                    }
-
-                })
-            }
-        }
-
-        call.argument<String>("environment")?.let {
-            val env = when (it) {
-                "dev" -> {
-                    Shield.ENVIRONMENT_DEV
-                }
-                "staging" -> {
-                    Shield.ENVIRONMENT_STAGING
-                }
-                else -> {
-                    Shield.ENVIRONMENT_PROD
-                }
-            }
-            builder.setEnvironment(env)
-        }
-
-        call.argument<String>("logLevel")?.let {
-            when (it) {
-                "debug" -> builder.setLogLevel(Shield.LogLevel.DEBUG)
-                "info" -> builder.setLogLevel(Shield.LogLevel.INFO)
-                "verbose" -> builder.setLogLevel(Shield.LogLevel.VERBOSE)
-                else -> {
-                    builder.setLogLevel(Shield.LogLevel.NONE)
-                }
-            }
-        }
-        Shield.setSingletonInstance(builder.build())
-    }
-
-    private fun getDeviceResult(@NonNull result: Result) {
-        var isDeviceResultCalled = AtomicBoolean(false)
-        Shield.getInstance().setDeviceResultStateListener {
-            if (!isDeviceResultCalled.getAndSet(true)) {
-                val deviceResult = Shield.getInstance().latestDeviceResult
-                if (deviceResult != null) {
-                    Handler(Looper.getMainLooper()).post {
-                        result.success(deviceResult.toString())
                     }
                 } else {
-                    val error = Shield.getInstance().responseError
-                    Handler(Looper.getMainLooper()).post {
-                        result.error(
-                            error?.code?.toString() ?: "0",
-                            error?.localizedMessage ?: "Unknown error",
-                            null
+                    ShieldFactory.createShield(application, config)
+                }
+
+            if (!registerCallback) {
+                startDeviceResultListener()
+            }
+
+            result.success(null)
+
+        } catch (t: Throwable) {
+            result.error("SHIELD_ERROR", t.message ?: "Init failed", null)
+        }
+    }
+
+    // ---------------- FLOW LISTENER ----------------
+
+    private fun startDeviceResultListener() {
+
+        val localShield = shield ?: return
+
+        pluginScope.launch {
+
+            localShield.onDeviceResult().collect { res ->
+
+                when (res) {
+
+                    is Result.Success -> {
+
+                        sessionIdCache = res.data.sessionId
+
+                        withContext(Dispatchers.Main) {
+                            channel.invokeMethod(
+                                "setDeviceResult",
+                                res.data.data.toString()
+                            )
+                        }
+                    }
+
+                    is Result.Failure -> {
+
+                        val err = hashMapOf<String, Any>(
+                            "message" to (res.error.errorMessage ?: ""),
+                            "code" to (res.error.errorCode ?: 0)
                         )
+
+                        withContext(Dispatchers.Main) {
+                            channel.invokeMethod("setDeviceResultError", err)
+                        }
                     }
                 }
             }
         }
     }
+
+    // ---------------- SEND ATTRIBUTES ----------------
 
     private fun sendAttributes(
         screenName: String,
         data: HashMap<String, String>,
-        @NonNull result: Result
+        result: MethodChannel.Result
     ) {
-        Shield.getInstance().sendAttributes(screenName, data, object : ShieldCallback<Boolean> {
-            override fun onSuccess(p0: Boolean?) {
-                result.success(p0 ?: false)
-            }
 
-            override fun onFailure(p0: ShieldException?) {
-                result.error(
-                    p0?.code?.toString()?:"0",
-                    p0?.localizedMessage ?: "failed to send attributes",
-                    null
-                )
-            }
-        })
-    }
+        val localShield = shield ?: run {
+            result.error("SHIELD_ERROR", "Shield not initialized", null)
+            return
+        }
 
-    private fun sendDeviceSignature(
-        screenName: String,
-        @NonNull result: Result
-    ) {
-        try {
-            Shield.getInstance().sendDeviceSignature(
-                screenName
-            ) {
-                result.success(true)
+        pluginScope.launch {
+            try {
+                val res = localShield.sendAttributes(screenName, data).first()
+
+                when (res) {
+                    is Result.Success<*> -> {
+                        val sessionId = res.data as String
+                        sessionIdCache = sessionId
+
+                        withContext(Dispatchers.Main) {
+                            result.success(sessionId)
+                        }
+                    }
+
+                    is Result.Failure<*> -> {
+                        withContext(Dispatchers.Main) {
+                            result.error(
+                                res.error.errorCode.toString(),
+                                res.error.errorMessage ?: "Unknown error",
+                                null
+                            )
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) {
+                    result.error("SHIELD_ERROR", e.message, null)
+                }
             }
-        } catch (e: Exception) {
-            result.error("0", e.localizedMessage ?: "failed to send device signature", null)
         }
     }
 
+    // ---------------- SIGNATURE ----------------
+
+    private fun sendDeviceSignature(
+        screenName: String,
+        result: MethodChannel.Result
+    ) {
+
+        val localShield = shield ?: run {
+            result.error("SHIELD_ERROR", "Shield not initialized", null)
+            return
+        }
+
+        pluginScope.launch {
+            try {
+                val res = localShield.sendDeviceSignature(screenName).first()
+
+                when (res) {
+                    is Result.Success<*> -> {
+                        val sessionId = res.data as String
+                        sessionIdCache = sessionId
+
+                        withContext(Dispatchers.Main) {
+                            result.success(sessionId)
+                        }
+                    }
+
+                    is Result.Failure<*> -> {
+                        withContext(Dispatchers.Main) {
+                            result.error(
+                                res.error.errorCode.toString(),
+                                res.error.errorMessage ?: "Signature failed",
+                                null
+                            )
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) {
+                    result.error("SHIELD_ERROR", e.message, null)
+                }
+            }
+        }
+    }
+
+    // ---------------- HELPERS ----------------
+
     private fun setCrossPlatformParameters(name: String, version: String) {
-        ShieldCrossPlatformHelper.setCrossPlatformParameters(ShieldCrossPlatformParams(name, version))
+        ShieldCrossPlatformHelper.setCrossPlatformParameters(
+            ShieldCrossPlatformParams(name, version)
+        )
     }
 
-    override fun onDetachedFromActivityForConfigChanges() {
+    private fun mapEnvironment(env: String?): Environment =
+        when (env?.lowercase()) {
+            "dev" -> Environment.DEV
+            "staging" -> Environment.STAGING
+            else -> Environment.PROD
+        }
 
-    }
-
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-
-    }
-
-    override fun onDetachedFromActivity() {
-
-    }
+    private fun mapLogLevel(level: String?): LogLevel =
+        when (level?.lowercase()) {
+            "debug" -> LogLevel.DEBUG
+            "info" -> LogLevel.INFO
+            "verbose" -> LogLevel.VERBOSE
+            else -> LogLevel.NONE
+        }
 }

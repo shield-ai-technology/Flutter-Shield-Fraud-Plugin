@@ -1,5 +1,4 @@
 enum ShieldLogLevel { none, info, debug, verbose }
-
 enum ShieldEnvironment { dev, prod, staging }
 
 typedef OnSuccess = Function(Map<String, dynamic>);
@@ -28,22 +27,33 @@ class BlockedDialog {
 class ShieldConfig {
   final String siteID;
   final String key;
-  bool enableMocking = false;
-  ShieldLogLevel logLevel = ShieldLogLevel.none;
-  ShieldEnvironment environment = ShieldEnvironment.prod;
-  bool enableBackgroundListener = false;
-  String? partnerId = "";
+
+  // COMMON
+  ShieldLogLevel logLevel;
+  ShieldEnvironment environment;
+  String? partnerId;
+
+  // CALLBACK
   ShieldCallback? shieldCallback;
   BlockedDialog? defaultBlockedDialog;
 
-  ShieldConfig(
-      {required this.siteID,
-      required this.key,
-      this.shieldCallback,
-      this.enableBackgroundListener = false,
-      this.enableMocking = false,
-      this.partnerId,
-      this.environment = ShieldEnvironment.prod,
-      this.logLevel = ShieldLogLevel.none,
-      this.defaultBlockedDialog});
+  //  OLD API (keep — do NOT rename)
+  bool enableBackgroundListener;
+  bool enableMocking;
+
+  //  NEW ANDROID-ONLY
+  bool blockScreenRecording;
+
+  ShieldConfig({
+    required this.siteID,
+    required this.key,
+    this.shieldCallback,
+    this.enableBackgroundListener = false,
+    this.enableMocking = false,
+    this.blockScreenRecording = false,
+    this.partnerId = "",
+    this.environment = ShieldEnvironment.prod,
+    this.logLevel = ShieldLogLevel.none,
+    this.defaultBlockedDialog,
+  });
 }
