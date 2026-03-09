@@ -1,6 +1,6 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_shieldfraud (1.0.16):
+  - flutter_shieldfraud (2.0.0):
     - Flutter
     - ShieldFraud (>= 1.5.55)
   - ShieldFraud (1.5.55)
