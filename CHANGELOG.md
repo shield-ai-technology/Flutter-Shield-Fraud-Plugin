@@ -1,7 +1,6 @@
 ### 2.0.0
 
 - Added support for flutter 3.x and Dart 3.x
-- Update to Android native SDK v2.4.0
 
 ### 1.0.15
 
