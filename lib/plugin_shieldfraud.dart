@@ -82,9 +82,24 @@ class Shield {
 
   static Future<String> get sessionId async {
     try {
-      return await _channel.invokeMethod('getSessionID') ?? "";
+      final result = await _channel.invokeMethod('getSessionID');
+      latestError = null;
+      return result ?? "";
+    } on PlatformException catch (e, s) {
+      _internalLog("getSessionID failed", e, s);
+      latestError = ShieldError(
+        int.tryParse(e.code) ?? 0,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+      );
+      return "";
     } catch (e, s) {
       _internalLog("getSessionID failed", e, s);
+      latestError = ShieldError(
+        0,
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
       return "";
     }
   }
@@ -105,10 +120,18 @@ class Shield {
       return json.decode(result);
     } on PlatformException catch (e) {
       latestError =
-          ShieldError(int.tryParse(e.code) ?? 0, e.message ?? "Unknown error");
+          ShieldError(
+  int.tryParse(e.code) ?? 0,
+  e.message ?? e.details?.toString() ?? "Unknown error",
+);
     } catch (e, s) {
       _internalLog("latestDeviceResult failed", e, s);
-      latestError = ShieldError(0, "Unknown error ${e.toString()}");
+      latestError = ShieldError(
+        0,
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
     }
     return null;
   }
@@ -130,15 +153,34 @@ class Shield {
         },
       );
 
+      latestError = null;
+
       // iOS old SDK → bool
       if (result is bool) {
-        return result ? await sessionId : null;
+        if (!result) {
+          latestError = ShieldError(0, "sendAttributes failed");
+          return null;
+        }
+        return await sessionId;
       }
 
       // Android new SDK → sessionId
       return result as String?;
+    } on PlatformException catch (e, s) {
+      _internalLog("sendAttributes failed", e, s);
+      latestError = ShieldError(
+        int.tryParse(e.code) ?? 0,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+      );
+      return null;
     } catch (e, s) {
       _internalLog("sendAttributes failed", e, s);
+      latestError = ShieldError(
+        0,
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
       return null;
     }
   }
@@ -156,14 +198,39 @@ class Shield {
       )
           .timeout(const Duration(seconds: 30), onTimeout: () => null);
 
+      latestError = null;
+
+      // timeout case
+      if (result == null) {
+        latestError = ShieldError(0, "sendDeviceSignature timed out or failed");
+        return null;
+      }
+
       // iOS old SDK → bool
       if (result is bool) {
-        return result ? await sessionId : null;
+        if (!result) {
+          latestError = ShieldError(0, "sendDeviceSignature failed");
+          return null;
+        }
+        return await sessionId;
       }
 
       return result as String?;
+    } on PlatformException catch (e, s) {
+      _internalLog("sendDeviceSignature failed", e, s);
+      latestError = ShieldError(
+        int.tryParse(e.code) ?? 0,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+      );
+      return null;
     } catch (e, s) {
       _internalLog("sendDeviceSignature failed", e, s);
+      latestError = ShieldError(
+        0,
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
       return null;
     }
   }

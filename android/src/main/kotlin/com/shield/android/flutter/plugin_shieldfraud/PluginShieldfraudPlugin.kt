@@ -81,7 +81,13 @@ class PluginShieldfraudPlugin :
             "initShieldFraud" -> initShieldFraud(call, result)
 
             "getSessionID" -> {
-                val id = sessionIdCache ?: shield?.sessionId ?: ""
+                val localShield = shield
+                if (localShield == null) {
+                    result.error("100", "Initialize sdk before calling getSessionId", null)
+                    return
+                }
+
+                val id = sessionIdCache ?: localShield.sessionId ?: ""
                 result.success(id)
             }
 
@@ -90,7 +96,7 @@ class PluginShieldfraudPlugin :
                 val localShield = shield
 
                 if (localShield == null) {
-                    result.success(null)
+                    result.error("100", "Initialize sdk before calling getDeviceResult", null)
                     return
                 }
 

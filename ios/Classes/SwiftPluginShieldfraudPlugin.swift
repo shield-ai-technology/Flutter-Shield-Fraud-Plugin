@@ -131,18 +131,30 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
     
     private func sendAttributes(screenName: String, data: [String: String], _ result: @escaping FlutterResult) {
         Shield.shared().sendAttributes(withScreenName: screenName, data: data) { (status, error) in
-               if error != nil {
-                    result(false)
-               } else {
-                   result(status)
-               }
+            if let error = error {
+                result(FlutterError(
+                    code: String(error.code),
+                    message: error.localizedDescription,
+                    details: nil
+                ))
+            } else {
+                result(status)
+            }
 
            }
     }
     
     private func sendDeviceSignature(screenname: String, _ result: @escaping FlutterResult) {
         Shield.shared().sendDeviceSignature(withScreenName: screenname) {
-            result(true)
+            if let error = Shield.shared().getErrorResponse() {
+                result(FlutterError(
+                    code: String(error.code),
+                    message: error.localizedDescription,
+                    details: nil
+                ))
+            } else {
+                result(true)
+            }
         }
     }
     public func didSuccess(result: [String : Any]) {
