@@ -119,11 +119,10 @@ class Shield {
 
       return json.decode(result);
     } on PlatformException catch (e) {
-      latestError =
-          ShieldError(
-  int.tryParse(e.code) ?? 0,
-  e.message ?? e.details?.toString() ?? "Unknown error",
-);
+      latestError = ShieldError(
+        int.tryParse(e.code) ?? 0,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+      );
     } catch (e, s) {
       _internalLog("latestDeviceResult failed", e, s);
       latestError = ShieldError(

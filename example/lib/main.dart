@@ -120,7 +120,13 @@ class _MyAppState extends State<MyApp> {
         });
         log("Latest device result refreshed");
       } else {
-        log("No latest device result available");
+        final error = Shield.latestError;
+        log("Latest device result unavailable ::: ${error?.code} ${error?.message}");
+        setState(() {
+          _errorMessage = error != null
+              ? "${error.code} : ${error.message}"
+              : "No latest device result available";
+        });
       }
     } catch (e) {
       log("Refresh error: $e");
@@ -138,8 +144,25 @@ class _MyAppState extends State<MyApp> {
       setState(() => _isSending = true);
       log("Manual Signature Triggered");
       final sessionId = await Shield.sendDeviceSignature("manual");
-      final success = sessionId != null;
-      log("Signature success = $success ::: sessionId = $sessionId");
+      final success = sessionId != null && sessionId.isNotEmpty;
+      if (success) {
+        log("Signature success = true ::: sessionId = $sessionId");
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
+      } else {
+        final error = Shield.latestError;
+        log("Signature FAILED ::: ${error?.code} ${error?.message}");
+        if (mounted) {
+          setState(() {
+            _errorMessage = error != null
+                ? "${error.code} : ${error.message}"
+                : "Signature failed";
+          });
+        }
+      }
     } catch (e) {
       log("Signature Error $e");
     } finally {
@@ -161,10 +184,23 @@ class _MyAppState extends State<MyApp> {
         },
       );
 
-      if (sessionId != null) {
+      if (sessionId != null && sessionId.isNotEmpty) {
         log("Attributes SUCCESS - sessionId = $sessionId");
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
       } else {
-        log("Attributes FAILED");
+        final error = Shield.latestError;
+        log("Attributes FAILED ::: ${error?.code} ${error?.message}");
+        if (mounted) {
+          setState(() {
+            _errorMessage = error != null
+                ? "${error.code} : ${error.message}"
+                : "Attributes failed";
+          });
+        }
       }
     } catch (e) {
       log("Attributes Error $e");
@@ -218,7 +254,6 @@ class _MyAppState extends State<MyApp> {
   // UI
   // -------------------------------------------------
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
