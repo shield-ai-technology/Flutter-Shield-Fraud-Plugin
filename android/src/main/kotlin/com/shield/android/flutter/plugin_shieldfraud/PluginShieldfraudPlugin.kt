@@ -271,9 +271,9 @@ class PluginShieldfraudPlugin :
                     is Result.Failure<*> -> {
                         withContext(Dispatchers.Main) {
                             result.error(
-                                safeErrorCode(res.error.errorCode),
+                                res.error.errorCode,
                                 res.error.errorMessage ?: "Unknown error",
-                                throwableToString(res.error.exception)
+                                res.error.exception
                             )
                         }
                     }
@@ -315,9 +315,9 @@ class PluginShieldfraudPlugin :
                     is Result.Failure<*> -> {
                         withContext(Dispatchers.Main) {
                             result.error(
-                                safeErrorCode(res.error.errorCode),
+                                res.error.errorCode,
                                 res.error.errorMessage ?: "Signature failed",
-                                throwableToString(res.error.exception)
+                                res.error.exception
                             )
                         }
                     }
@@ -353,19 +353,11 @@ class PluginShieldfraudPlugin :
             else -> LogLevel.NONE
         }
 
-    private fun safeErrorCode(code: String?): String {
-        return code?.takeIf { it.isNotBlank() } ?: "0"
-    }
-
-    private fun throwableToString(throwable: Throwable?): String? {
-        return throwable?.stackTraceToString() ?: throwable?.message
-    }
-
     private fun shieldErrorToFlutterMap(error: com.shield.android.ShieldError): HashMap<String, Any?> {
         return hashMapOf(
-            "code" to safeErrorCode(error.errorCode),
+            "code" to error.errorCode,
             "message" to error.errorMessage,
-            "exception" to throwableToString(error.exception)
+            "exception" to error.exception
         )
     }
 }

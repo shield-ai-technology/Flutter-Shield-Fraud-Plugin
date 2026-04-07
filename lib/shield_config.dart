@@ -15,14 +15,6 @@ class ShieldError {
         this.exception,
       });
 
-  int get codeAsInt => int.tryParse(code) ?? 0;
-
-  Map<String, dynamic> toJson() => {
-    "code": code,
-    "message": message,
-    "exception": exception,
-  };
-
   @override
   String toString() {
     return 'ShieldError(code: $code, message: $message, exception: $exception)';

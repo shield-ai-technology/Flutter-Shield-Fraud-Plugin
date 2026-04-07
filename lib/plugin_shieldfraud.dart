@@ -206,7 +206,7 @@ class Shield {
       // timeout case
       if (result == null) {
         latestError = const ShieldError(
-          "TIMEOUT",
+          "0",
           "sendDeviceSignature timed out or failed",
         );
         return null;
