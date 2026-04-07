@@ -164,7 +164,8 @@ class PluginShieldfraudPlugin :
 
             shield =
                 if (registerCallback) {
-                    ShieldFactory.createShieldWithCallback(application, config) { sdkResult ->
+                    ShieldFactory.createShieldWithCallback(application, config) {
+                            sdkResult ->
                         pluginScope.launch {
                             when (sdkResult) {
 
@@ -180,10 +181,7 @@ class PluginShieldfraudPlugin :
                                 }
 
                                 is Result.Failure -> {
-                                    val err = hashMapOf<String, Any>(
-                                        "message" to (sdkResult.error.errorMessage ?: ""),
-                                        "code" to (sdkResult.error.errorCode ?: 0)
-                                    )
+                                    val err = shieldErrorToFlutterMap(sdkResult.error)
 
                                     withContext(Dispatchers.Main) {
                                         channel.invokeMethod("setDeviceResultError", err)
@@ -232,11 +230,7 @@ class PluginShieldfraudPlugin :
                     }
 
                     is Result.Failure -> {
-
-                        val err = hashMapOf<String, Any>(
-                            "message" to (res.error.errorMessage ?: ""),
-                            "code" to (res.error.errorCode ?: 0)
-                        )
+                        val err = shieldErrorToFlutterMap(res.error)
 
                         withContext(Dispatchers.Main) {
                             channel.invokeMethod("setDeviceResultError", err)
@@ -277,9 +271,9 @@ class PluginShieldfraudPlugin :
                     is Result.Failure<*> -> {
                         withContext(Dispatchers.Main) {
                             result.error(
-                                res.error.errorCode.toString(),
+                                safeErrorCode(res.error.errorCode),
                                 res.error.errorMessage ?: "Unknown error",
-                                null
+                                throwableToString(res.error.exception)
                             )
                         }
                     }
@@ -321,9 +315,9 @@ class PluginShieldfraudPlugin :
                     is Result.Failure<*> -> {
                         withContext(Dispatchers.Main) {
                             result.error(
-                                res.error.errorCode.toString(),
+                                safeErrorCode(res.error.errorCode),
                                 res.error.errorMessage ?: "Signature failed",
-                                null
+                                throwableToString(res.error.exception)
                             )
                         }
                     }
@@ -358,4 +352,20 @@ class PluginShieldfraudPlugin :
             "verbose" -> LogLevel.VERBOSE
             else -> LogLevel.NONE
         }
+
+    private fun safeErrorCode(code: String?): String {
+        return code?.takeIf { it.isNotBlank() } ?: "0"
+    }
+
+    private fun throwableToString(throwable: Throwable?): String? {
+        return throwable?.stackTraceToString() ?: throwable?.message
+    }
+
+    private fun shieldErrorToFlutterMap(error: com.shield.android.ShieldError): HashMap<String, Any?> {
+        return hashMapOf(
+            "code" to safeErrorCode(error.errorCode),
+            "message" to error.errorMessage,
+            "exception" to throwableToString(error.exception)
+        )
+    }
 }

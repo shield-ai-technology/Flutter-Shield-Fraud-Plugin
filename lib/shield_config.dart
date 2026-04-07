@@ -5,14 +5,33 @@ typedef OnSuccess = Function(Map<String, dynamic>);
 typedef OnError = Function(ShieldError);
 
 class ShieldError {
-  String message;
-  int code;
-  ShieldError(this.code, this.message);
+  final String code;
+  final String message;
+  final String? exception;
+
+  const ShieldError(
+      this.code,
+      this.message, {
+        this.exception,
+      });
+
+  int get codeAsInt => int.tryParse(code) ?? 0;
+
+  Map<String, dynamic> toJson() => {
+    "code": code,
+    "message": message,
+    "exception": exception,
+  };
+
+  @override
+  String toString() {
+    return 'ShieldError(code: $code, message: $message, exception: $exception)';
+  }
 }
 
 class ShieldCallback {
-  late OnSuccess onSuccess;
-  late OnError onError;
+  final OnSuccess onSuccess;
+  final OnError onError;
 
   ShieldCallback(this.onSuccess, this.onError);
 }

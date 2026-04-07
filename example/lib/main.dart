@@ -43,7 +43,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _initShield() async {
     try {
-      ShieldCallback shieldCallback = ShieldCallback(
+      final shieldCallback = ShieldCallback(
             (Map<String, dynamic> result) {
           if (!mounted) return;
           setState(() {
@@ -54,9 +54,13 @@ class _MyAppState extends State<MyApp> {
         },
             (ShieldError error) {
           if (!mounted) return;
-          log("Device Result ERROR ${error.code} ${error.message}");
+          log(
+            "Device Result ERROR code=${error.code}, message=${error.message}, exception=${error.exception}",
+          );
           setState(() {
-            _errorMessage = "${error.code} : ${error.message}";
+            _errorMessage = error.exception?.isNotEmpty == true
+                ? "${error.code} : ${error.message}\n${error.exception}"
+                : "${error.code} : ${error.message}";
             _isLoading = false;
           });
         },
@@ -84,11 +88,22 @@ class _MyAppState extends State<MyApp> {
       } else {
         final latest = await Shield.latestDeviceResult;
         if (!mounted) return;
+
         if (latest != null) {
           setState(() {
             _jsonString =
                 const JsonEncoder.withIndent('  ').convert(latest);
             _errorMessage = null;
+            _isLoading = false;
+          });
+        } else {
+          final error = Shield.latestError;
+          setState(() {
+            _errorMessage = error != null
+                ? (error.exception?.isNotEmpty == true
+                ? "${error.code} : ${error.message}\n${error.exception}"
+                : "${error.code} : ${error.message}")
+                : "No latest device result available";
             _isLoading = false;
           });
         }
@@ -124,7 +139,9 @@ class _MyAppState extends State<MyApp> {
         log("Latest device result unavailable ::: ${error?.code} ${error?.message}");
         setState(() {
           _errorMessage = error != null
-              ? "${error.code} : ${error.message}"
+              ? (error.exception?.isNotEmpty == true
+              ? "${error.code} : ${error.message}\n${error.exception}"
+              : "${error.code} : ${error.message}")
               : "No latest device result available";
         });
       }
@@ -158,7 +175,9 @@ class _MyAppState extends State<MyApp> {
         if (mounted) {
           setState(() {
             _errorMessage = error != null
-                ? "${error.code} : ${error.message}"
+                ? (error.exception?.isNotEmpty == true
+                ? "${error.code} : ${error.message}\n${error.exception}"
+                : "${error.code} : ${error.message}")
                 : "Signature failed";
           });
         }
@@ -197,7 +216,9 @@ class _MyAppState extends State<MyApp> {
         if (mounted) {
           setState(() {
             _errorMessage = error != null
-                ? "${error.code} : ${error.message}"
+                ? (error.exception?.isNotEmpty == true
+                ? "${error.code} : ${error.message}\n${error.exception}"
+                : "${error.code} : ${error.message}")
                 : "Attributes failed";
           });
         }
@@ -214,38 +235,46 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _showUserIdDialog() async {
     final controller = TextEditingController();
-    final userId = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Enter User ID"),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: "Enter userid",
+    try {
+      final userId = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text("Enter User ID"),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: "Enter userid",
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final value = controller.text.trim();
-                if (value.isNotEmpty) {
-                  Navigator.pop(context, value);
-                }
-              },
-              child: const Text("Send"),
-            ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final value = controller.text.trim();
+                  if (value.isNotEmpty) {
+                    Navigator.of(dialogContext).pop(value);
+                  }
+                },
+                child: const Text("Send"),
+              ),
+            ],
+          );
+        },
+      );
 
-    if (userId != null && userId.isNotEmpty) {
-      _sendAttributes(userId);
+      if (!mounted) return;
+
+      if (userId != null && userId.isNotEmpty) {
+        await Future<void>.delayed(Duration.zero);
+        if (!mounted) return;
+        await _sendAttributes(userId);
+      }
+    } finally {
+      controller.dispose();
     }
   }
 
