@@ -3,65 +3,65 @@ import ShieldFraud
 
 public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
 
-  static var channel: FlutterMethodChannel?
-  static var isShieldInitialized: Bool = false
-    
-  public static func register(with registrar: FlutterPluginRegistrar) {
-    channel = FlutterMethodChannel(name: "plugin_shieldfraud", binaryMessenger: registrar.messenger())
-    if let channel = channel {
-        let instance = SwiftPluginShieldfraudPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-        registrar.addApplicationDelegate(instance)
-    }
-  }
+    static var channel: FlutterMethodChannel?
+    static var isShieldInitialized: Bool = false
 
-  public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    if call.method == "setCrossPlatformParameters" {
-        if let args = call.arguments as? [String: Any], let pluginName = args["name"] as? String, let pluginVersion = args["version"] as? String {
-            let params = ShieldCrossPlatformParams(name: pluginName, version: pluginVersion)
-            ShieldCrossPlatformHelper.setCrossPlatformParameters(params)
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        channel = FlutterMethodChannel(name: "plugin_shieldfraud", binaryMessenger: registrar.messenger())
+        if let channel = channel {
+            let instance = SwiftPluginShieldfraudPlugin()
+            registrar.addMethodCallDelegate(instance, channel: channel)
+            registrar.addApplicationDelegate(instance)
         }
-    } else if call.method == "initShieldFraud" {
-        self.initShieldFraud(call.arguments)
-    } else if call.method == "getSessionID" {
-        if SwiftPluginShieldfraudPlugin.isShieldInitialized {
-            let sessionId =  Shield.shared().sessionId
-            result(sessionId)
-        } else {
-            result(FlutterError(code: "100", message: "Intialized sdk before calling getSessionId", details: nil))
+    }
+
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "setCrossPlatformParameters" {
+            if let args = call.arguments as? [String: Any], let pluginName = args["name"] as? String, let pluginVersion = args["version"] as? String {
+                let params = ShieldCrossPlatformParams(name: pluginName, version: pluginVersion)
+                ShieldCrossPlatformHelper.setCrossPlatformParameters(params)
+            }
+        } else if call.method == "initShieldFraud" {
+            self.initShieldFraud(call.arguments)
+        } else if call.method == "getSessionID" {
+            if SwiftPluginShieldfraudPlugin.isShieldInitialized {
+                let sessionId =  Shield.shared().sessionId
+                result(sessionId)
+            } else {
+                result(FlutterError(code: "100", message: "Intialized sdk before calling getSessionId", details: nil))
+                return
+            }
+        } else if call.method == "getDeviceResult" {
+            self.getDeviceResult(result)
+        } else if call.method == "sendAttributes" {
+            guard let args = call.arguments as? [String: Any],
+                  let screenName = args["screenName"] as? String,
+                  let data = args["attributes"] as? Dictionary<String, String>
+            else {
+                return
+            }
+            self.sendAttributes(screenName: screenName, data: data, result)
+
+        } else if call.method == "sendDeviceSignature" {
+            guard let args = call.arguments as? [String: Any],
+                  let screenName = args["screenName"] as? String
+            else {
+                return
+            }
+            self.sendDeviceSignature(screenname: screenName, result)
+        }else if call.method == "isShieldInitialized" {
+            result(SwiftPluginShieldfraudPlugin.isShieldInitialized)
+        }
+        else {
+            result(FlutterMethodNotImplemented)
             return
         }
-     } else if call.method == "getDeviceResult" {
-        self.getDeviceResult(result)
-     } else if call.method == "sendAttributes" {
-        guard let args = call.arguments as? [String: Any],
-           let screenName = args["screenName"] as? String,
-           let data = args["attributes"] as? Dictionary<String, String>
-        else {
-          return
-        }
-        self.sendAttributes(screenName: screenName, data: data, result)
-        
-     } else if call.method == "sendDeviceSignature" {
-         guard let args = call.arguments as? [String: Any],
-               let screenName = args["screenName"] as? String
-         else {
-             return
-         }
-         self.sendDeviceSignature(screenname: screenName, result)
-     }else if call.method == "isShieldInitialized" {
-         result(SwiftPluginShieldfraudPlugin.isShieldInitialized)
-     }
-      else {
-        result(FlutterMethodNotImplemented)
-        return
-     }
-  }
-    
+    }
+
 }
 
 extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
-    
+
     private func initShieldFraud(_ arguments: Any?) {
         if SwiftPluginShieldfraudPlugin.isShieldInitialized {
             return
@@ -90,7 +90,7 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
                 config.environment = Environment.prod
             }
         }
-        
+
         if let logLevel = args["logLevel"] as? String {
             if logLevel == "debug" || logLevel == "verbose" {
                 config.logLevel = LogLevel.debug
@@ -99,19 +99,19 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             } else {
                 config.logLevel = LogLevel.none
             }
-            
+
         }
 
-        if let defaultBlockedDialog = args["defaultBlockedDialog"] as? [String: String], 
-        let title = defaultBlockedDialog["title"], 
-        let body = defaultBlockedDialog["body"] {
+        if let defaultBlockedDialog = args["defaultBlockedDialog"] as? [String: String],
+           let title = defaultBlockedDialog["title"],
+           let body = defaultBlockedDialog["body"] {
             config.defaultBlockedDialog = BlockedDialog(title: title, body: body)
         }
 
         Shield.setUp(with: config)
         SwiftPluginShieldfraudPlugin.isShieldInitialized = true
     }
-    
+
     private func getDeviceResult(_ result: @escaping FlutterResult) {
         Shield.shared().setDeviceResultStateListener {  // check whether device result assessment is complete
             if let deviceResult = Shield.shared().getLatestDeviceResult() {
@@ -128,7 +128,7 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             }
         }
     }
-    
+
     private func sendAttributes(screenName: String, data: [String: String], _ result: @escaping FlutterResult) {
         Shield.shared().sendAttributes(withScreenName: screenName, data: data) { (status, error) in
             if let error = error {
@@ -141,9 +141,9 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
                 result(status)
             }
 
-           }
+        }
     }
-    
+
     private func sendDeviceSignature(screenname: String, _ result: @escaping FlutterResult) {
         Shield.shared().sendDeviceSignature(withScreenName: screenname) {
             if let error = Shield.shared().getErrorResponse() {
@@ -158,20 +158,20 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
         }
     }
     public func didSuccess(result: [String : Any]) {
-      guard let jsonData = try? JSONSerialization.data(withJSONObject: result, options: []) else { return }
-      let dataString = String(bytes: jsonData, encoding: String.Encoding.utf8) ?? ""
-      DispatchQueue.main.async {
-        SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResult", arguments: dataString)
-      }
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: result, options: []) else { return }
+        let dataString = String(bytes: jsonData, encoding: String.Encoding.utf8) ?? ""
+        DispatchQueue.main.async {
+            SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResult", arguments: dataString)
+        }
     }
 
     public func didError(error: NSError) {
-      DispatchQueue.main.async {
-          
-          var shieldError = [String : Any]()
-          shieldError["message"] = error.localizedDescription
-          shieldError["code"] = error.code
-          SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResultError", arguments: shieldError)
-      }
+        DispatchQueue.main.async {
+            var shieldError = [String: Any]()
+            shieldError["message"] = error.localizedDescription
+            shieldError["code"] = String(error.code)
+            shieldError["exception"] = nil
+            SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResultError", arguments: shieldError)
+        }
     }
 }

@@ -84,18 +84,19 @@ class Shield {
     try {
       final result = await _channel.invokeMethod('getSessionID');
       latestError = null;
-      return result ?? "";
+      return result?.toString() ?? "";
     } on PlatformException catch (e, s) {
       _internalLog("getSessionID failed", e, s);
       latestError = ShieldError(
-        int.tryParse(e.code) ?? 0,
+        e.code,
         e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
       );
       return "";
     } catch (e, s) {
       _internalLog("getSessionID failed", e, s);
       latestError = ShieldError(
-        0,
+        "0",
         e.toString().isNotEmpty
             ? e.toString()
             : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
@@ -117,16 +118,18 @@ class Shield {
 
       if (result == null) return null;
 
-      return json.decode(result);
-    } on PlatformException catch (e) {
+      return _parseMap(result);
+    } on PlatformException catch (e, s) {
+      _internalLog("latestDeviceResult failed", e, s);
       latestError = ShieldError(
-        int.tryParse(e.code) ?? 0,
+        e.code,
         e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
       );
     } catch (e, s) {
       _internalLog("latestDeviceResult failed", e, s);
       latestError = ShieldError(
-        0,
+        "0",
         e.toString().isNotEmpty
             ? e.toString()
             : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
@@ -157,25 +160,26 @@ class Shield {
       // iOS old SDK → bool
       if (result is bool) {
         if (!result) {
-          latestError = ShieldError(0, "sendAttributes failed");
+          latestError = const ShieldError("0", "sendAttributes failed");
           return null;
         }
         return await sessionId;
       }
 
       // Android new SDK → sessionId
-      return result as String?;
+      return result?.toString();
     } on PlatformException catch (e, s) {
       _internalLog("sendAttributes failed", e, s);
       latestError = ShieldError(
-        int.tryParse(e.code) ?? 0,
+        e.code,
         e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
       );
       return null;
     } catch (e, s) {
       _internalLog("sendAttributes failed", e, s);
       latestError = ShieldError(
-        0,
+        "0",
         e.toString().isNotEmpty
             ? e.toString()
             : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
@@ -201,31 +205,35 @@ class Shield {
 
       // timeout case
       if (result == null) {
-        latestError = ShieldError(0, "sendDeviceSignature timed out or failed");
+        latestError = const ShieldError(
+          "0",
+          "sendDeviceSignature timed out or failed",
+        );
         return null;
       }
 
       // iOS old SDK → bool
       if (result is bool) {
         if (!result) {
-          latestError = ShieldError(0, "sendDeviceSignature failed");
+          latestError = const ShieldError("0", "sendDeviceSignature failed");
           return null;
         }
         return await sessionId;
       }
 
-      return result as String?;
+      return result?.toString();
     } on PlatformException catch (e, s) {
       _internalLog("sendDeviceSignature failed", e, s);
       latestError = ShieldError(
-        int.tryParse(e.code) ?? 0,
+        e.code,
         e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
       );
       return null;
     } catch (e, s) {
       _internalLog("sendDeviceSignature failed", e, s);
       latestError = ShieldError(
-        0,
+        "0",
         e.toString().isNotEmpty
             ? e.toString()
             : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
@@ -255,22 +263,33 @@ class Shield {
     try {
       switch (call.method) {
         case "setDeviceResult":
-          _shieldCallback?.onSuccess(json.decode(call.arguments));
+          final data = _parseMap(call.arguments);
+          _shieldCallback?.onSuccess(data);
           break;
 
         case "setDeviceResultError":
+          final data = _parseMap(call.arguments);
           final shieldError = ShieldError(
-            call.arguments["code"] ?? 0,
-            call.arguments["message"] ?? "Unknown error",
+            _parseCode(data["code"]),
+            data["message"]?.toString() ?? "Unknown error",
+            exception: data["exception"]?.toString(),
           );
+          latestError = shieldError;
           _shieldCallback?.onError(shieldError);
           break;
       }
     } catch (e, s) {
-      _internalLog("methodHandler failed", e, s);
-      _shieldCallback?.onError(
-        ShieldError(0, "Unknown error: ${e.toString()}"),
+      _internalLog(
+        "methodHandler failed. method=${call.method}, args=${call.arguments}, type=${call.arguments.runtimeType}",
+        e,
+        s,
       );
+      final shieldError = ShieldError(
+        "0",
+        "Unknown error: ${e.toString()}",
+      );
+      latestError = shieldError;
+      _shieldCallback?.onError(shieldError);
     }
   }
 
@@ -298,6 +317,30 @@ class Shield {
 
     // Android 2.x expects enum.name
     return level.name;
+  }
+
+  static Map<String, dynamic> _parseMap(dynamic value) {
+    if (value == null) return <String, dynamic>{};
+
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+
+    if (value is String) {
+      final decoded = json.decode(value);
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    }
+
+    throw FormatException(
+      "Expected Map or JSON String, got ${value.runtimeType}",
+    );
+  }
+
+  static String _parseCode(dynamic code) {
+    if (code == null) return "0";
+    return code.toString();
   }
 
   // --------------------------------------------------------
