@@ -24,7 +24,7 @@ You should ensure that you add flutter_shieldfraud as a dependency in your flutt
 
 ```
 dependencies:
-  flutter_shieldfraud: ^2.0.0
+  flutter_shieldfraud: ^2.1.0
 ```
 
 You should then run flutter packages get or update your packages in IntelliJ.

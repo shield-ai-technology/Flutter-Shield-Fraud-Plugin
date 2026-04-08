@@ -1,3 +1,7 @@
+### 2.1.0
+
+- Bug Fixes
+
 ### 2.0.0
 
 - Added support for flutter 3.x and Dart 3.x

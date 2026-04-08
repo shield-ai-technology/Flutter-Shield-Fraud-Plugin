@@ -9,6 +9,8 @@ build/
 /.idea/workspace.xml
 /.idea/libraries
 /.idea
+/android/.idea
+/example/android/.kotlin
 
 # FVM Version Cache
 .fvm/.fvmrc
