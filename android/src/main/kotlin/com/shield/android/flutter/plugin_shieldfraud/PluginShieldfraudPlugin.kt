@@ -273,7 +273,7 @@ class PluginShieldfraudPlugin :
                             result.error(
                                 res.error.errorCode,
                                 res.error.errorMessage ?: "Unknown error",
-                                res.error.exception
+                                res.error.exception?.toString()
                             )
                         }
                     }
@@ -317,7 +317,7 @@ class PluginShieldfraudPlugin :
                             result.error(
                                 res.error.errorCode,
                                 res.error.errorMessage ?: "Signature failed",
-                                res.error.exception
+                                res.error.exception?.toString()
                             )
                         }
                     }
@@ -357,7 +357,7 @@ class PluginShieldfraudPlugin :
         return hashMapOf(
             "code" to error.errorCode,
             "message" to error.errorMessage,
-            "exception" to error.exception
+            "exception" to error.exception.toString()
         )
     }
 }
