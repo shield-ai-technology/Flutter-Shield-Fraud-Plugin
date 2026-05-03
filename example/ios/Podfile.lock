@@ -21,7 +21,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_shieldfraud: c8f42eb5700aa725e29c4e00d8e6a90b087dc1eb
+  flutter_shieldfraud: 28417a443b8d4aa27e8dc9809412d6a0a247d553
   ShieldFraud: 6ac1c9f60a79a0fc9a90b1cf6d8d307cf2e6c7c8
 
 PODFILE CHECKSUM: bf9df0de4bae0ee00dea9fe0a30806ca7786d555
