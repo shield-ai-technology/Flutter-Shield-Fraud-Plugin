@@ -129,9 +129,11 @@ packages:
   flutter_shieldfraud:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
+      path: "."
+      ref: "feature/MT-754"
+      resolved-ref: "46d62ded05f3db8f8c2d1e7bf1d51d1c92ac5c4c"
+      url: "https://github.com/shield-ai-technology/Flutter-Shield-Fraud-Plugin.git"
+    source: git
     version: "2.1.1"
   flutter_test:
     dependency: "direct dev"
