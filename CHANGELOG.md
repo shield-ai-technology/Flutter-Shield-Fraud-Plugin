@@ -1,3 +1,9 @@
+### 2.2.0
+
+- Bump native iOS version to 1.5.57
+- Bump native Android version to 2.5.0
+- Bug Fixes
+
 ### 2.1.1
 
 - Bug Fixes
