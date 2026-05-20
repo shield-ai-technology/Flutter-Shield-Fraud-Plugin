@@ -69,8 +69,8 @@ class _MyAppState extends State<MyApp> {
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
         final config = ShieldConfig(
-          siteID: "59947973924580a1bf14766e74331641870de57f",
-          key: "242236650000000059947973924580a1bf14766e74331641870de57f",
+          siteID: "SITE_ID",
+          key: "SECRET_KEY",
           shieldCallback: shieldCallback,
           environment: ShieldEnvironment.prod,
           logLevel: ShieldLogLevel.verbose,
