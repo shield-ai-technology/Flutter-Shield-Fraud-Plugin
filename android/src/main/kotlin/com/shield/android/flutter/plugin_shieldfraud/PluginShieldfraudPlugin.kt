@@ -162,13 +162,18 @@ class PluginShieldfraudPlugin :
                 blockScreenRecording =
                     call.argument<Boolean>("blockScreenRecording") == true
 
-                val dialog = call.argument<Map<String, Any?>>("defaultBlockedDialog")
-                if (dialog != null) {
-                    val title = dialog["title"]?.toString() ?: ""
-                    val body = dialog["body"]?.toString() ?: ""
+                call.argument<Map<String, Any?>>("defaultBlockedDialog")
+                    ?.let { dialog ->
+                        val title = (dialog["title"] as? String)
+                            ?.takeIf { it.isNotBlank() }
 
-                    blockedDialog = BlockedDialog(title, body)
-                }
+                        val body = (dialog["body"] as? String)
+                            ?.takeIf { it.isNotBlank() }
+
+                        if (title != null && body != null) {
+                            blockedDialog = BlockedDialog(title, body)
+                        }
+                    }
             }
             val registerCallback = call.argument<Boolean>("registerCallback") == true
 
