@@ -150,16 +150,31 @@ class PluginShieldfraudPlugin :
         }
 
         try {
-
             val config = ShieldConfig(siteId, key).apply {
                 environment = mapEnvironment(call.argument("environment"))
                 logLevel = mapLogLevel(call.argument("logLevel"))
+
+                partnerId = call.argument<String>("partnerId") ?: ""
+
                 needBackgroundListener =
                     call.argument<Boolean>("needBackgroundListener") == true
+
                 blockScreenRecording =
                     call.argument<Boolean>("blockScreenRecording") == true
-            }
 
+                call.argument<Map<String, Any?>>("defaultBlockedDialog")
+                    ?.let { dialog ->
+                        val title = (dialog["title"] as? String)
+                            ?.takeIf { it.isNotBlank() }
+
+                        val body = (dialog["body"] as? String)
+                            ?.takeIf { it.isNotBlank() }
+
+                        if (title != null && body != null) {
+                            blockedDialog = BlockedDialog(title, body)
+                        }
+                    }
+            }
             val registerCallback = call.argument<Boolean>("registerCallback") == true
 
             shield =

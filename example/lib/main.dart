@@ -69,12 +69,17 @@ class _MyAppState extends State<MyApp> {
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
         final config = ShieldConfig(
-            siteID: "59947973924580a1bf14766e74331641870de57f",
-            key: "242236650000000059947973924580a1bf14766e74331641870de57f",
-            shieldCallback: shieldCallback,
-            environment: ShieldEnvironment.prod,
-            logLevel: ShieldLogLevel.verbose,
-            blockScreenRecording: true
+          siteID: "59947973924580a1bf14766e74331641870de57f",
+          key: "242236650000000059947973924580a1bf14766e74331641870de57f",
+          shieldCallback: shieldCallback,
+          environment: ShieldEnvironment.prod,
+          logLevel: ShieldLogLevel.verbose,
+          blockScreenRecording: true,
+          defaultBlockedDialog: BlockedDialog(
+            title: "Access Blocked",
+            body: "This device does not meet the required security checks.",
+          ),
+          partnerId: "2444666666"
         );
 
         // Timeout protection (prevents infinite spinner)
