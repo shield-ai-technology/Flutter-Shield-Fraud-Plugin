@@ -310,12 +310,6 @@ class Shield {
   }
 
   static String _serializeLogLevel(ShieldLogLevel level) {
-    // iOS 1.x expects enum.toString()
-    if (Platform.isIOS) {
-      return level.toString();
-    }
-
-    // Android 2.x expects enum.name
     return level.name;
   }
 
