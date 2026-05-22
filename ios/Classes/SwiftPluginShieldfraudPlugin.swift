@@ -113,18 +113,26 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
     }
 
     private func getDeviceResult(_ result: @escaping FlutterResult) {
-        Shield.shared().setDeviceResultStateListener {  // check whether device result assessment is complete
+        Shield.shared().setDeviceResultStateListener {
             if let deviceResult = Shield.shared().getLatestDeviceResult() {
-                guard let jsonData = try? JSONSerialization.data(withJSONObject: deviceResult, options: []) else { return }
-                let dataString = String(bytes: jsonData, encoding: String.Encoding.utf8) ?? ""
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: deviceResult, options: []) else {
+                    result(FlutterError(
+                        code: "0",
+                        message: "Failed to serialize device result",
+                        details: nil
+                    ))
+                    return
+                }
+
+                let dataString = String(bytes: jsonData, encoding: .utf8) ?? ""
                 result(dataString)
 
-            }
-
-            if let error = Shield.shared().getErrorResponse() {
-                result(FlutterError(code: String(error.code),
-                                    message:error.localizedDescription,
-                                    details: nil))
+            } else if let error = Shield.shared().getErrorResponse() {
+                result(FlutterError(
+                    code: String(error.code),
+                    message: error.localizedDescription,
+                    details: nil
+                ))
             }
         }
     }
