@@ -121,7 +121,13 @@ class PluginShieldfraudPlugin :
             }
 
             "sendDeviceSignature" -> {
-                val screenName = call.argument<String>("screenName") ?: ""
+                val screenName = call.argument<String>("screenName")
+
+                if (screenName == null) {
+                    result.error("SHIELD_ERROR", "Invalid arguments", null)
+                    return
+                }
+
                 sendDeviceSignature(screenName, result)
             }
 
