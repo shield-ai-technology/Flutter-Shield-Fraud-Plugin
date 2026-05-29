@@ -31,7 +31,6 @@ class PluginShieldfraudPlugin :
 //    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var shield: Shield? = null
-    private var sessionIdCache: String? = null
 
     private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -87,8 +86,7 @@ class PluginShieldfraudPlugin :
                     return
                 }
 
-                val id = sessionIdCache ?: localShield.sessionId ?: ""
-                result.success(id)
+                result.success(localShield.sessionId ?: "")
             }
 
             "getDeviceResult" -> {
@@ -191,8 +189,6 @@ class PluginShieldfraudPlugin :
                             when (sdkResult) {
 
                                 is Result.Success -> {
-                                    sessionIdCache = sdkResult.data.sessionId
-
                                     withContext(Dispatchers.Main) {
                                         channel.invokeMethod(
                                             "setDeviceResult",
@@ -237,11 +233,7 @@ class PluginShieldfraudPlugin :
             localShield.onDeviceResult().collect { res ->
 
                 when (res) {
-
                     is Result.Success -> {
-
-                        sessionIdCache = res.data.sessionId
-
                         withContext(Dispatchers.Main) {
                             channel.invokeMethod(
                                 "setDeviceResult",
@@ -282,8 +274,6 @@ class PluginShieldfraudPlugin :
                 when (res) {
                     is Result.Success<*> -> {
                         val sessionId = res.data as String
-                        sessionIdCache = sessionId
-
                         withContext(Dispatchers.Main) {
                             result.success(sessionId)
                         }
@@ -326,8 +316,6 @@ class PluginShieldfraudPlugin :
                 when (res) {
                     is Result.Success<*> -> {
                         val sessionId = res.data as String
-                        sessionIdCache = sessionId
-
                         withContext(Dispatchers.Main) {
                             result.success(sessionId)
                         }
