@@ -69,8 +69,8 @@ class _MyAppState extends State<MyApp> {
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
         final config = ShieldConfig(
-          siteID: "SITE_ID",
-          key: "SECRET_KEY",
+          siteID: "59947973924580a1bf14766e74331641870de57f",
+          key: "242236650000000059947973924580a1bf14766e74331641870de57f",
           shieldCallback: shieldCallback,
           environment: ShieldEnvironment.prod,
           logLevel: ShieldLogLevel.verbose,
@@ -160,15 +160,30 @@ class _MyAppState extends State<MyApp> {
   // BUTTON ACTIONS (Tap Safe)
   // -------------------------------------------------
 
-  Future<void> _sendSignature() async {
+  Future<void> _sendSignature({String? userId}) async {
     if (_isSending) return;
+
+    final hasUserId = userId != null && userId.isNotEmpty;
+
     try {
       setState(() => _isSending = true);
-      log("Manual Signature Triggered");
-      final sessionId = await Shield.sendDeviceSignature("manual");
+
+      log(
+        hasUserId
+            ? "Manual Signature Triggered with userId = $userId"
+            : "Manual Signature Triggered without userId",
+      );
+
+      final sessionId = await Shield.sendDeviceSignature(
+        "manual",
+        userId: hasUserId ? userId : null,
+      );
+
       final success = sessionId != null && sessionId.isNotEmpty;
+
       if (success) {
         log("Signature success = true ::: sessionId = $sessionId");
+
         if (mounted) {
           setState(() {
             _errorMessage = null;
@@ -176,7 +191,9 @@ class _MyAppState extends State<MyApp> {
         }
       } else {
         final error = Shield.latestError;
+
         log("Signature FAILED ::: ${error?.code} ${error?.message}");
+
         if (mounted) {
           setState(() {
             _errorMessage = error != null
@@ -259,7 +276,7 @@ class _MyAppState extends State<MyApp> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  final value = controller.text.trim();
+                  final value = controller.text;
                   if (value.isNotEmpty) {
                     Navigator.of(dialogContext).pop(value);
                   }
@@ -278,6 +295,52 @@ class _MyAppState extends State<MyApp> {
         if (!mounted) return;
         await _sendAttributes(userId);
       }
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  Future<void> _showSignatureUserIdDialog() async {
+    final controller = TextEditingController();
+
+    try {
+      final userId = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text("Enter User ID"),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: "Optional user_id",
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(controller.text);
+                },
+                child: const Text("Send"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted) return;
+
+      // Cancel pressed
+      if (userId == null) return;
+
+      await Future<void>.delayed(Duration.zero);
+
+      if (!mounted) return;
+
+      await _sendSignature(userId: userId);
     } finally {
       controller.dispose();
     }
@@ -366,7 +429,7 @@ class _MyAppState extends State<MyApp> {
     return SizedBox(
       height: 48,
       child: ElevatedButton(
-        onPressed: _isSending ? null : _sendSignature,
+        onPressed: _isSending ? null : _showSignatureUserIdDialog,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFD040),
           foregroundColor: Colors.black,

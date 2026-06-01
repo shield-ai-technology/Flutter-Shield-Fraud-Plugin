@@ -120,13 +120,14 @@ class PluginShieldfraudPlugin :
 
             "sendDeviceSignature" -> {
                 val screenName = call.argument<String>("screenName")
+                val userId = call.argument<String>("userId")
 
-                if (screenName == null) {
+                if (screenName.isNullOrBlank()) {
                     result.error("SHIELD_ERROR", "Invalid arguments", null)
                     return
                 }
 
-                sendDeviceSignature(screenName, result)
+                sendDeviceSignature(screenName, userId, result)
             }
 
             "isShieldInitialized" -> {
@@ -301,9 +302,9 @@ class PluginShieldfraudPlugin :
 
     private fun sendDeviceSignature(
         screenName: String,
+        userId: String?,
         result: MethodChannel.Result
     ) {
-
         val localShield = shield ?: run {
             result.error("SHIELD_ERROR", "Shield not initialized", null)
             return
@@ -311,11 +312,18 @@ class PluginShieldfraudPlugin :
 
         pluginScope.launch {
             try {
-                val res = localShield.sendDeviceSignature(screenName).first()
+                val userData = ShieldUserData(screenName).apply {
+                    if (!userId.isNullOrEmpty()) {
+                        this.userId = userId
+                    }
+                }
+
+                val res = localShield.sendDeviceSignature(userData).first()
 
                 when (res) {
                     is Result.Success<*> -> {
                         val sessionId = res.data as String
+
                         withContext(Dispatchers.Main) {
                             result.success(sessionId)
                         }
