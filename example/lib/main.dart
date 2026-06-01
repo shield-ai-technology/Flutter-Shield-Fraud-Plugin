@@ -160,12 +160,21 @@ class _MyAppState extends State<MyApp> {
   // BUTTON ACTIONS (Tap Safe)
   // -------------------------------------------------
 
-  Future<void> _sendSignature() async {
+  Future<void> _sendSignature({String? userId}) async {
     if (_isSending) return;
+    final hasUserId = userId != null && userId.isNotEmpty;
     try {
       setState(() => _isSending = true);
-      log("Manual Signature Triggered");
-      final sessionId = await Shield.sendDeviceSignature("manual");
+      log(
+        hasUserId
+            ? "Manual Signature Triggered with userId = $userId"
+            : "Manual Signature Triggered without userId",
+      );
+      final sessionId = await Shield.sendDeviceSignature(
+        "manual",
+        userId: hasUserId ? userId : null,
+      );
+
       final success = sessionId != null && sessionId.isNotEmpty;
       if (success) {
         log("Signature success = true ::: sessionId = $sessionId");
@@ -283,6 +292,48 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _showSignatureUserIdDialog() async {
+    final controller = TextEditingController();
+    try {
+      final userId = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text("Enter User ID"),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: "Optional user_id",
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(controller.text);
+                },
+                child: const Text("Send"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted) return;
+
+      // Cancel pressed
+      if (userId == null) return;
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) return;
+      await _sendSignature(userId: userId);
+    } finally {
+      controller.dispose();
+    }
+  }
+
 
   // -------------------------------------------------
   // UI
@@ -366,7 +417,7 @@ class _MyAppState extends State<MyApp> {
     return SizedBox(
       height: 48,
       child: ElevatedButton(
-        onPressed: _isSending ? null : _sendSignature,
+        onPressed: _isSending ? null : _showSignatureUserIdDialog,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFD040),
           foregroundColor: Colors.black,
