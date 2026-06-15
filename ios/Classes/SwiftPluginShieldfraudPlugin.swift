@@ -46,9 +46,21 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
             guard let args = call.arguments as? [String: Any],
                   let screenName = args["screenName"] as? String
             else {
+                result(FlutterError(
+                    code: "SHIELD_ERROR",
+                    message: "Invalid arguments",
+                    details: nil
+                ))
                 return
             }
-            self.sendDeviceSignature(screenname: screenName, result)
+
+            let userId = args["userId"] as? String
+
+            self.sendDeviceSignature(
+                screenname: screenName,
+                userId: userId,
+                result
+            )
         }else if call.method == "isShieldInitialized" {
             result(SwiftPluginShieldfraudPlugin.isShieldInitialized)
         }
@@ -152,19 +164,40 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
         }
     }
 
-    private func sendDeviceSignature(screenname: String, _ result: @escaping FlutterResult) {
-        Shield.shared().sendDeviceSignature(withScreenName: screenname) {
-            if let error = Shield.shared().getErrorResponse() {
-                result(FlutterError(
-                    code: String(error.code),
-                    message: error.localizedDescription,
-                    details: nil
-                ))
-            } else {
-                result(true)
-            }
+    private func sendDeviceSignature(
+        screenname: String,
+        userId: String?,
+        _ result: @escaping FlutterResult
+    ) {
+        let userData: ShieldUserData
+
+        if let userId = userId,
+           !userId.isEmpty {
+            userData = ShieldUserData(
+                screenName: screenname,
+                userId: userId
+            )
+        } else {
+            userData = ShieldUserData(
+                screenName: screenname
+            )
         }
+        Shield.shared().sendDeviceSignature(
+            withUserData: userData,
+            completionHandler: {
+                if let error = Shield.shared().getErrorResponse() {
+                    result(FlutterError(
+                        code: String(error.code),
+                        message: error.localizedDescription,
+                        details: nil
+                    ))
+                } else {
+                    result(true)
+                }
+            }
+        )
     }
+
     public func didSuccess(result: [String : Any]) {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: result, options: []) else { return }
         let dataString = String(bytes: jsonData, encoding: String.Encoding.utf8) ?? ""

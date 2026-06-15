@@ -192,12 +192,23 @@ class Shield {
   // SEND SIGNATURE
   // --------------------------------------------------------
 
-  static Future<String?> sendDeviceSignature(String screenName) async {
+  static Future<String?> sendDeviceSignature(
+      String screenName, {
+        String? userId,
+      }) async {
     try {
+      final args = <String, dynamic>{
+        "screenName": screenName,
+      };
+
+      if (userId != null && userId.isNotEmpty) {
+        args["userId"] = userId;
+      }
+
       final result = await _channel
           .invokeMethod(
         "sendDeviceSignature",
-        {"screenName": screenName},
+        args,
       )
           .timeout(const Duration(seconds: 30), onTimeout: () => null);
 
