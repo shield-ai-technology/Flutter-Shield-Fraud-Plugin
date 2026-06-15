@@ -162,22 +162,22 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _sendSignature({String? userId}) async {
     if (_isSending) return;
-    final hasUserId = userId != null && userId.isNotEmpty;
+
     try {
       setState(() => _isSending = true);
-      log(
-        hasUserId
-            ? "Manual Signature Triggered with userId = $userId"
-            : "Manual Signature Triggered without userId",
-      );
+
+      log("Manual Signature Triggered with userId = $userId");
+
       final sessionId = await Shield.sendDeviceSignature(
         "manual",
-        userId: hasUserId ? userId : null,
+        userId: userId,
       );
 
       final success = sessionId != null && sessionId.isNotEmpty;
+
       if (success) {
         log("Signature success = true ::: sessionId = $sessionId");
+
         if (mounted) {
           setState(() {
             _errorMessage = null;
@@ -185,7 +185,9 @@ class _MyAppState extends State<MyApp> {
         }
       } else {
         final error = Shield.latestError;
+
         log("Signature FAILED ::: ${error?.code} ${error?.message}");
+
         if (mounted) {
           setState(() {
             _errorMessage = error != null
