@@ -1,3 +1,10 @@
+### 2.3.0
+
+- Bump native iOS version to 1.5.57
+- Bump native Android version to 2.5.0
+- Support to send user Id together with Fingerprint call
+- Bug Fixes
+
 ### 2.2.1
 
 - Bug Fixes
