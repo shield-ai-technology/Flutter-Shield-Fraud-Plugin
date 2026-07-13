@@ -1,3 +1,8 @@
+### 2.3.1
+
+- Bump native iOS version to 1.5.59
+- Bump native Android version to 2.6.1
+
 ### 2.3.0
 
 - Bump native iOS version to 1.5.58
