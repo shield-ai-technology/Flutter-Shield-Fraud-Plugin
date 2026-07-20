@@ -21,6 +21,17 @@ class Shield {
         _shieldCallback = config.shieldCallback;
       }
 
+      if (config.siteID.isEmpty || config.key.isEmpty) {
+        const shieldError = ShieldError(
+          "SHIELD_ERROR",
+          "Missing siteID or key",
+        );
+
+        latestError = shieldError;
+        _shieldCallback?.onError(shieldError);
+        return;
+      }
+
       final environment = _serializeEnvironment(config.environment);
       final logLevel = _serializeLogLevel(config.logLevel);
 
@@ -43,15 +54,36 @@ class Shield {
         "defaultBlockedDialog": dialogMap,
       };
 
-      // Android 2.x.x
       if (Platform.isAndroid) {
         args["needBackgroundListener"] = config.enableBackgroundListener;
         args["blockScreenRecording"] = config.blockScreenRecording;
       }
 
       await _channel.invokeMethod("initShieldFraud", args);
+      latestError = null;
+    } on PlatformException catch (e, s) {
+      _internalLog("initShield failed", e, s);
+
+      final shieldError = ShieldError(
+        e.code,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
+      );
+
+      latestError = shieldError;
+      _shieldCallback?.onError(shieldError);
     } catch (e, s) {
       _internalLog("initShield failed", e, s);
+
+      final shieldError = ShieldError(
+        "0",
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
+
+      latestError = shieldError;
+      _shieldCallback?.onError(shieldError);
     }
   }
 

@@ -113,7 +113,9 @@ extension SwiftPluginShieldfraudPlugin {
 
         guard let args = arguments as? [String: Any],
               let siteID = args["siteID"] as? String,
-              let key = args["key"] as? String else {
+              let key = args["key"] as? String,
+              !siteID.isEmpty,
+              !key.isEmpty else {
             result(FlutterError(
                 code: "SHIELD_ERROR",
                 message: "Missing siteID or key",
