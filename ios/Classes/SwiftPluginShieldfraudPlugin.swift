@@ -1,13 +1,18 @@
 import Flutter
 import ShieldFraud
 
-public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
+public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin {
 
     static var channel: FlutterMethodChannel?
-    static var isShieldInitialized: Bool = false
+
+    private var shield: Shield?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        channel = FlutterMethodChannel(name: "plugin_shieldfraud", binaryMessenger: registrar.messenger())
+        channel = FlutterMethodChannel(
+            name: "plugin_shieldfraud",
+            binaryMessenger: registrar.messenger()
+        )
+
         if let channel = channel {
             let instance = SwiftPluginShieldfraudPlugin()
             registrar.addMethodCallDelegate(instance, channel: channel)
@@ -15,37 +20,55 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
         }
     }
 
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    public func handle(
+        _ call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
         if call.method == "setCrossPlatformParameters" {
-            if let args = call.arguments as? [String: Any], let pluginName = args["name"] as? String, let pluginVersion = args["version"] as? String {
-                let params = ShieldCrossPlatformParams(name: pluginName, version: pluginVersion)
+            if let args = call.arguments as? [String: Any],
+               let pluginName = args["name"] as? String,
+               let pluginVersion = args["version"] as? String {
+                let params = ShieldCrossPlatformParams(
+                    name: pluginName,
+                    version: pluginVersion
+                )
                 ShieldCrossPlatformHelper.setCrossPlatformParameters(params)
             }
+
         } else if call.method == "initShieldFraud" {
-            self.initShieldFraud(call.arguments)
+            self.initShieldFraud(call.arguments, result)
+
         } else if call.method == "getSessionID" {
-            if SwiftPluginShieldfraudPlugin.isShieldInitialized {
-                let sessionId =  Shield.shared().sessionId
-                result(sessionId)
-            } else {
-                result(FlutterError(code: "100", message: "Intialized sdk before calling getSessionId", details: nil))
+            guard let shield = self.shield else {
+                result(FlutterError(
+                    code: "100",
+                    message: "Initialize sdk before calling getSessionId",
+                    details: nil
+                ))
                 return
             }
+
+            result(shield.sessionId)
+
         } else if call.method == "getDeviceResult" {
             self.getDeviceResult(result)
+
         } else if call.method == "sendAttributes" {
             guard let args = call.arguments as? [String: Any],
                   let screenName = args["screenName"] as? String,
-                  let data = args["attributes"] as? Dictionary<String, String>
-            else {
+                  let data = args["attributes"] as? [String: String] else {
                 return
             }
-            self.sendAttributes(screenName: screenName, data: data, result)
+
+            self.sendAttributes(
+                screenName: screenName,
+                data: data,
+                result
+            )
 
         } else if call.method == "sendDeviceSignature" {
             guard let args = call.arguments as? [String: Any],
-                  let screenName = args["screenName"] as? String
-            else {
+                  let screenName = args["screenName"] as? String else {
                 result(FlutterError(
                     code: "SHIELD_ERROR",
                     message: "Invalid arguments",
@@ -57,42 +80,53 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin{
             let userId = args["userId"] as? String
 
             self.sendDeviceSignature(
-                screenname: screenName,
+                screenName: screenName,
                 userId: userId,
                 result
             )
-        }else if call.method == "isShieldInitialized" {
-            result(SwiftPluginShieldfraudPlugin.isShieldInitialized)
-        }
-        else {
+
+        } else if call.method == "isShieldInitialized" {
+            result(self.shield != nil)
+
+        } else {
             result(FlutterMethodNotImplemented)
-            return
         }
     }
-
 }
 
-extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
+extension SwiftPluginShieldfraudPlugin {
 
-    private func initShieldFraud(_ arguments: Any?) {
-        if SwiftPluginShieldfraudPlugin.isShieldInitialized {
+    private func initShieldFraud(
+        _ arguments: Any?,
+        _ result: @escaping FlutterResult
+    ) {
+        if self.shield != nil {
+            result(nil)
             return
         }
+
         guard let args = arguments as? [String: Any],
               let siteID = args["siteID"] as? String,
-              let key = args["key"] as? String else {
+              let key = args["key"] as? String,
+              !siteID.isEmpty,
+              !key.isEmpty else {
+            result(FlutterError(
+                code: "SHIELD_ERROR",
+                message: "Missing siteID or key",
+                details: nil
+            ))
             return
         }
-        let config = Configuration(withSiteId: siteID, secretKey: key)
-        if let enableMocking = args["enableMocking"] as? Bool, enableMocking {
-            config.enableMocking = true
-        }
-        if let partnerId = args["partnerId"] as? String{
+
+        let config = ShieldConfig(
+            siteId: siteID,
+            secretKey: key
+        )
+
+        if let partnerId = args["partnerId"] as? String {
             config.partnerId = partnerId
         }
-        if let registerCallback = args["registerCallback"] as? Bool, registerCallback {
-            config.deviceShieldCallback = self
-        }
+
         if let environment = args["environment"] as? String {
             if environment == "dev" {
                 config.environment = Environment.dev
@@ -111,108 +145,194 @@ extension SwiftPluginShieldfraudPlugin: DeviceShieldCallback{
             } else {
                 config.logLevel = LogLevel.none
             }
-
         }
 
-        if let defaultBlockedDialog = args["defaultBlockedDialog"] as? [String: String],
+        if let defaultBlockedDialog =
+        args["defaultBlockedDialog"] as? [String: String],
            let title = defaultBlockedDialog["title"],
            let body = defaultBlockedDialog["body"] {
-            config.defaultBlockedDialog = BlockedDialog(title: title, body: body)
+            config.defaultBlockedDialog = BlockedDialog(
+                title: title,
+                body: body
+            )
         }
 
-        Shield.setUp(with: config)
-        SwiftPluginShieldfraudPlugin.isShieldInitialized = true
-    }
+        let createdShield = ShieldFactory.createShield(config: config)
+        self.shield = createdShield
 
-    private func getDeviceResult(_ result: @escaping FlutterResult) {
-        Shield.shared().setDeviceResultStateListener {
-            if let deviceResult = Shield.shared().getLatestDeviceResult() {
-                guard let jsonData = try? JSONSerialization.data(withJSONObject: deviceResult, options: []) else {
-                    result(FlutterError(
-                        code: "0",
-                        message: "Failed to serialize device result",
-                        details: nil
-                    ))
+        let registerCallback =
+            args["registerCallback"] as? Bool == true
+
+        if registerCallback {
+            createdShield.onDeviceResult { [weak self] deviceIntelligence, error in
+                if let error = error {
+                    self?.emitDeviceResultError(error)
                     return
                 }
 
-                let dataString = String(bytes: jsonData, encoding: .utf8) ?? ""
-                result(dataString)
-
-            } else if let error = Shield.shared().getErrorResponse() {
-                result(FlutterError(
-                    code: String(error.code),
-                    message: error.localizedDescription,
-                    details: nil
-                ))
+                if let deviceIntelligence = deviceIntelligence {
+                    self?.emitDeviceResult(deviceIntelligence.data)
+                }
             }
         }
+
+        result(nil)
     }
 
-    private func sendAttributes(screenName: String, data: [String: String], _ result: @escaping FlutterResult) {
-        Shield.shared().sendAttributes(withScreenName: screenName, data: data) { (status, error) in
-            if let error = error {
-                result(FlutterError(
-                    code: String(error.code),
-                    message: error.localizedDescription,
-                    details: nil
-                ))
-            } else {
-                result(status)
-            }
+    private func getDeviceResult(
+        _ result: @escaping FlutterResult
+    ) {
+        guard let shield = self.shield else {
+            result(FlutterError(
+                code: "100",
+                message: "Initialize sdk before calling getDeviceResult",
+                details: nil
+            ))
+            return
+        }
 
+        guard let deviceIntelligence =
+        shield.getLatestDeviceResult() else {
+            result(nil)
+            return
+        }
+
+        guard let jsonData = try? JSONSerialization.data(
+            withJSONObject: deviceIntelligence.data,
+            options: []
+        ) else {
+            result(FlutterError(
+                code: "0",
+                message: "Failed to serialize device result",
+                details: nil
+            ))
+            return
+        }
+
+        let dataString =
+            String(bytes: jsonData, encoding: .utf8) ?? ""
+
+        result(dataString)
+    }
+
+    private func sendAttributes(
+        screenName: String,
+        data: [String: String],
+        _ result: @escaping FlutterResult
+    ) {
+        guard let shield = self.shield else {
+            result(FlutterError(
+                code: "SHIELD_ERROR",
+                message: "Shield not initialized",
+                details: nil
+            ))
+            return
+        }
+
+        shield.sendAttributes(
+            screenName: screenName,
+            data: data
+        ) { sessionId, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    result(self.flutterError(from: error))
+                } else {
+                    result(sessionId)
+                }
+            }
         }
     }
 
     private func sendDeviceSignature(
-        screenname: String,
+        screenName: String,
         userId: String?,
         _ result: @escaping FlutterResult
     ) {
+        guard let shield = self.shield else {
+            result(FlutterError(
+                code: "SHIELD_ERROR",
+                message: "Shield not initialized",
+                details: nil
+            ))
+            return
+        }
+
         let userData: ShieldUserData
 
         if let userId = userId,
            !userId.isEmpty {
             userData = ShieldUserData(
-                screenName: screenname,
+                screenName: screenName,
                 userId: userId
             )
         } else {
             userData = ShieldUserData(
-                screenName: screenname
+                screenName: screenName
             )
         }
-        Shield.shared().sendDeviceSignature(
-            withUserData: userData,
-            completionHandler: {
-                if let error = Shield.shared().getErrorResponse() {
-                    result(FlutterError(
-                        code: String(error.code),
-                        message: error.localizedDescription,
-                        details: nil
-                    ))
+
+        shield.sendDeviceSignature(
+            userData: userData
+        ) { sessionId, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    result(self.flutterError(from: error))
                 } else {
-                    result(true)
+                    result(sessionId)
                 }
             }
+        }
+    }
+
+    private func emitDeviceResult(
+        _ deviceResult: [String: Any]
+    ) {
+        guard let jsonData = try? JSONSerialization.data(
+            withJSONObject: deviceResult,
+            options: []
+        ) else {
+            return
+        }
+
+        let dataString =
+            String(bytes: jsonData, encoding: .utf8) ?? ""
+
+        DispatchQueue.main.async {
+            SwiftPluginShieldfraudPlugin.channel?.invokeMethod(
+                "setDeviceResult",
+                arguments: dataString
+            )
+        }
+    }
+
+    private func emitDeviceResultError(
+        _ error: ShieldError
+    ) {
+        var shieldError: [String: Any] = [
+            "message": error.errorMessage,
+            "code": error.errorCode
+        ]
+
+        if let underlying = error.underlying {
+            shieldError["exception"] =
+                underlying.localizedDescription
+        }
+
+        DispatchQueue.main.async {
+            SwiftPluginShieldfraudPlugin.channel?.invokeMethod(
+                "setDeviceResultError",
+                arguments: shieldError
+            )
+        }
+    }
+
+    private func flutterError(
+        from error: ShieldError
+    ) -> FlutterError {
+        return FlutterError(
+            code: error.errorCode,
+            message: error.errorMessage,
+            details: error.underlying?.localizedDescription
         )
-    }
-
-    public func didSuccess(result: [String : Any]) {
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: result, options: []) else { return }
-        let dataString = String(bytes: jsonData, encoding: String.Encoding.utf8) ?? ""
-        DispatchQueue.main.async {
-            SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResult", arguments: dataString)
-        }
-    }
-
-    public func didError(error: NSError) {
-        DispatchQueue.main.async {
-            var shieldError = [String: Any]()
-            shieldError["message"] = error.localizedDescription
-            shieldError["code"] = String(error.code)
-            shieldError["exception"] = nil
-            SwiftPluginShieldfraudPlugin.channel?.invokeMethod("setDeviceResultError", arguments: shieldError)
-        }
     }
 }

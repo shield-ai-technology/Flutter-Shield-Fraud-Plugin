@@ -21,6 +21,17 @@ class Shield {
         _shieldCallback = config.shieldCallback;
       }
 
+      if (config.siteID.isEmpty || config.key.isEmpty) {
+        const shieldError = ShieldError(
+          "SHIELD_ERROR",
+          "Missing siteID or key",
+        );
+
+        latestError = shieldError;
+        _shieldCallback?.onError(shieldError);
+        return;
+      }
+
       final environment = _serializeEnvironment(config.environment);
       final logLevel = _serializeLogLevel(config.logLevel);
 
@@ -43,21 +54,36 @@ class Shield {
         "defaultBlockedDialog": dialogMap,
       };
 
-      // Android 2.x.x
       if (Platform.isAndroid) {
         args["needBackgroundListener"] = config.enableBackgroundListener;
         args["blockScreenRecording"] = config.blockScreenRecording;
       }
 
-      // iOS 1.x.x
-      if (Platform.isIOS) {
-        args["enableBackgroundListener"] = config.enableBackgroundListener;
-        args["enableMocking"] = config.enableMocking;
-      }
-
       await _channel.invokeMethod("initShieldFraud", args);
+      latestError = null;
+    } on PlatformException catch (e, s) {
+      _internalLog("initShield failed", e, s);
+
+      final shieldError = ShieldError(
+        e.code,
+        e.message ?? e.details?.toString() ?? "Unknown error",
+        exception: e.details?.toString(),
+      );
+
+      latestError = shieldError;
+      _shieldCallback?.onError(shieldError);
     } catch (e, s) {
       _internalLog("initShield failed", e, s);
+
+      final shieldError = ShieldError(
+        "0",
+        e.toString().isNotEmpty
+            ? e.toString()
+            : (s.toString().isNotEmpty ? s.toString() : "Unknown error"),
+      );
+
+      latestError = shieldError;
+      _shieldCallback?.onError(shieldError);
     }
   }
 
@@ -147,7 +173,7 @@ class Shield {
       Map<String, String> data,
       ) async {
     try {
-      final result = await _channel.invokeMethod(
+      final String? result = await _channel.invokeMethod<String>(
         "sendAttributes",
         {
           "screenName": screenName,
@@ -156,18 +182,7 @@ class Shield {
       );
 
       latestError = null;
-
-      // iOS old SDK → bool
-      if (result is bool) {
-        if (!result) {
-          latestError = const ShieldError("0", "sendAttributes failed");
-          return null;
-        }
-        return await sessionId;
-      }
-
-      // Android new SDK → sessionId
-      return result?.toString();
+      return result;
     } on PlatformException catch (e, s) {
       _internalLog("sendAttributes failed", e, s);
       latestError = ShieldError(
@@ -205,8 +220,8 @@ class Shield {
         args["userId"] = userId;
       }
 
-      final result = await _channel
-          .invokeMethod(
+      final String? result = await _channel
+          .invokeMethod<String>(
         "sendDeviceSignature",
         args,
       )
@@ -223,16 +238,7 @@ class Shield {
         return null;
       }
 
-      // iOS old SDK → bool
-      if (result is bool) {
-        if (!result) {
-          latestError = const ShieldError("0", "sendDeviceSignature failed");
-          return null;
-        }
-        return await sessionId;
-      }
-
-      return result?.toString();
+      return result;
     } on PlatformException catch (e, s) {
       _internalLog("sendDeviceSignature failed", e, s);
       latestError = ShieldError(

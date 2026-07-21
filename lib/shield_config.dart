@@ -48,11 +48,8 @@ class ShieldConfig {
   ShieldCallback? shieldCallback;
   BlockedDialog? defaultBlockedDialog;
 
-  //  OLD API (keep — do NOT rename)
+  // ANDROID-ONLY
   bool enableBackgroundListener;
-  bool enableMocking;
-
-  //  NEW ANDROID-ONLY
   bool blockScreenRecording;
 
   ShieldConfig({
@@ -60,7 +57,6 @@ class ShieldConfig {
     required this.key,
     this.shieldCallback,
     this.enableBackgroundListener = false,
-    this.enableMocking = false,
     this.blockScreenRecording = false,
     this.partnerId = "",
     this.environment = ShieldEnvironment.prod,
