@@ -4,7 +4,6 @@ import ShieldFraud
 public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin {
 
     static var channel: FlutterMethodChannel?
-    static var isShieldInitialized: Bool = false
 
     private var shield: Shield?
 
@@ -40,8 +39,7 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin {
             self.initShieldFraud(call.arguments, result)
 
         } else if call.method == "getSessionID" {
-            guard SwiftPluginShieldfraudPlugin.isShieldInitialized,
-                  let shield = self.shield else {
+            guard let shield = self.shield else {
                 result(FlutterError(
                     code: "100",
                     message: "Initialize sdk before calling getSessionId",
@@ -88,10 +86,7 @@ public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin {
             )
 
         } else if call.method == "isShieldInitialized" {
-            result(
-                SwiftPluginShieldfraudPlugin.isShieldInitialized
-                    && self.shield != nil
-            )
+            result(self.shield != nil)
 
         } else {
             result(FlutterMethodNotImplemented)
@@ -105,8 +100,7 @@ extension SwiftPluginShieldfraudPlugin {
         _ arguments: Any?,
         _ result: @escaping FlutterResult
     ) {
-        if SwiftPluginShieldfraudPlugin.isShieldInitialized,
-           self.shield != nil {
+        if self.shield != nil {
             result(nil)
             return
         }
@@ -182,7 +176,6 @@ extension SwiftPluginShieldfraudPlugin {
             }
         }
 
-        SwiftPluginShieldfraudPlugin.isShieldInitialized = true
         result(nil)
     }
 
