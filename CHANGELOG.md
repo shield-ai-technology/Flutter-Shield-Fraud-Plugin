@@ -1,3 +1,7 @@
+### 2.4.1
+
+- Bump native Android version to 2.7.0
+
 ### 2.4.0
 
 - Bump native iOS version to 2.0.0
