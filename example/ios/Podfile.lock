@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_shieldalpha (2.4.2):
+    - Flutter
+    - ShieldAlpha (= 2.0.1)
+  - ShieldAlpha (2.0.1)
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_shieldalpha (from `.symlinks/plugins/flutter_shieldalpha/ios`)
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - ShieldAlpha
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_shieldalpha:
+    :path: ".symlinks/plugins/flutter_shieldalpha/ios"
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_shieldalpha: bfcfa3bebd95b3fa28020554d6623b1ef971d781
+  ShieldAlpha: 419544178aa229a27b91d4e4a26b265be11f9c72
+
+PODFILE CHECKSUM: e678a3f3f85f376c1462c33ae610471873d1a368
+
+COCOAPODS: 1.16.2
