@@ -1,5 +1,5 @@
 import Flutter
-import ShieldFraud
+import ShieldAlpha
 
 public class SwiftPluginShieldfraudPlugin: NSObject, FlutterPlugin {
 
