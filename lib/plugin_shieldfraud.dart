@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_shieldfraud/generated/plugin_version_info.dart';
+import 'package:flutter_shieldalpha/generated/plugin_version_info.dart';
 import 'shield_config.dart';
 
 class Shield {

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_shieldfraud/plugin_shieldfraud.dart';
-import 'package:flutter_shieldfraud/shield_config.dart';
+import 'package:flutter_shieldalpha/plugin_shieldfraud.dart';
+import 'package:flutter_shieldalpha/shield_config.dart';
 
 void main() {
   runApp(const MaterialApp(
