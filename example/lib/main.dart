@@ -68,9 +68,12 @@ class _MyAppState extends State<MyApp> {
 
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
+        const siteId = String.fromEnvironment('SHIELD_SITE_ID', defaultValue: "SITE_ID");
+        const secretKey = String.fromEnvironment('SHIELD_SECRET_KEY', defaultValue: "SECRET_KEY");
+
         final config = ShieldConfig(
-          siteID: "SITE_ID",
-          key: "SECRET_KEY",
+          siteID: siteId,
+          key: secretKey,
           shieldCallback: shieldCallback,
           environment: ShieldEnvironment.prod,
           logLevel: ShieldLogLevel.verbose,
