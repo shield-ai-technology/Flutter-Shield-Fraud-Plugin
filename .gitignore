@@ -18,3 +18,15 @@ build/
 # FVM
 .fvm/
 .fvmrc
+
+# Environment & Secrets
+.env
+.env.local
+.env.development
+.env.production
+*.backup
+example/shield-output.json
+shield-output.json
+!.env.example
+*.lock
+.env.example

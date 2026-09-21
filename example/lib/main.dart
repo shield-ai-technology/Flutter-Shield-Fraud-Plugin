@@ -45,6 +45,8 @@ class _MyAppState extends State<MyApp> {
     try {
       final shieldCallback = ShieldCallback(
             (Map<String, dynamic> result) {
+          final sid = result['session_id'] ?? result['sessionId'];
+          log("SHIELD_VERIFIED_SESSION_ID: $sid");
           if (!mounted) return;
           setState(() {
             _jsonString = const JsonEncoder.withIndent('  ').convert(result);
@@ -68,9 +70,12 @@ class _MyAppState extends State<MyApp> {
 
       final alreadyInit = await Shield.isShieldInitialized;
       if (!alreadyInit) {
+        const siteId = String.fromEnvironment('SHIELD_SITE_ID', defaultValue: "SITE_ID");
+        const secretKey = String.fromEnvironment('SHIELD_SECRET_KEY', defaultValue: "SECRET_KEY");
+
         final config = ShieldConfig(
-          siteID: "SITE_ID",
-          key: "SECRET_KEY",
+          siteID: siteId,
+          key: secretKey,
           shieldCallback: shieldCallback,
           environment: ShieldEnvironment.prod,
           logLevel: ShieldLogLevel.verbose,
