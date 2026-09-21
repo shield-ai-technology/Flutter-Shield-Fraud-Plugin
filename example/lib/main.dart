@@ -45,6 +45,8 @@ class _MyAppState extends State<MyApp> {
     try {
       final shieldCallback = ShieldCallback(
             (Map<String, dynamic> result) {
+          final sid = result['session_id'] ?? result['sessionId'];
+          log("SHIELD_VERIFIED_SESSION_ID: $sid");
           if (!mounted) return;
           setState(() {
             _jsonString = const JsonEncoder.withIndent('  ').convert(result);
