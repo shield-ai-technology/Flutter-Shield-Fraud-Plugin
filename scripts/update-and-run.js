@@ -582,10 +582,10 @@ function injectCredentials(mainDartPath = MAIN_DART_PATH, siteId, secretKey) {
   }
 
   // Ensure callback logs the result so stdout observer catches it instantly on init
-  if (!updatedContent.includes('log("Device Result SUCCESS: $result");')) {
+  if (!updatedContent.includes('SHIELD_VERIFIED_SESSION_ID')) {
     updatedContent = updatedContent.replace(
       /\(Map<String,\s*dynamic>\s*result\)\s*\{/,
-      '(Map<String, dynamic> result) {\n          log("Device Result SUCCESS: $result");'
+      '(Map<String, dynamic> result) {\n          final sid = result["session_id"] ?? result["sessionId"];\n          log("SHIELD_VERIFIED_SESSION_ID: $sid");'
     );
   }
 
@@ -756,35 +756,25 @@ function buildFlutterRunArgs(deviceId, target = 'lib/main.dart', platform = '', 
 function extractSessionId(logChunk) {
   if (!logChunk || typeof logChunk !== 'string') return null;
 
-  // Patterns matching Session ID formats:
-  // 1. Explicit sessionId or session_id key: sessionId = "32hex" or sessionId: 32hex or {session_id: 32hex}
+  // 1. Explicit SHIELD_VERIFIED_SESSION_ID tag from main.dart
+  const verifiedTagMatch = logChunk.match(/SHIELD_VERIFIED_SESSION_ID:\s*([a-fA-F0-9]{32})/i);
+  if (verifiedTagMatch && verifiedTagMatch[1] && verifiedTagMatch[1].length === 32) {
+    return verifiedTagMatch[1].toLowerCase();
+  }
+
+  // 2. Explicit key-value pairs matching session_id or sessionId specifically
+  // Examples: session_id: "32hex", sessionId = 32hex, "session_id": "32hex"
   const patterns = [
-    /(?:sessionId|session_id)\s*[:=]\s*["']?([a-fA-F0-9]{32})["']?/i,
+    /(?:^|[^\w])session_?id\s*[:=]\s*["']?([a-fA-F0-9]{32})["']?/i,
     /(?:Signature success|Attributes SUCCESS).*?sessionId\s*=\s*([a-fA-F0-9]{32})/i,
-    /["']?session_id["']?\s*[:=]\s*["']?([a-fA-F0-9]{32})["']?/i,
-    /\[Shield[A-Za-z0-9_]*\][^\n\r]*?([a-fA-F0-9]{32})/i,
-    /Device Result[^\n\r]*?([a-fA-F0-9]{32})/i,
-    /(?:sessionId|session_id|signature|device_signature)[^\n\r]*?([a-fA-F0-9]{32})/i,
+    /["']session_id["']\s*:\s*["']?([a-fA-F0-9]{32})["']?/i,
+    /\[Shield.*?\][^\n\r]*?session_?id\s*[:=]\s*["']?([a-fA-F0-9]{32})["']?/i,
   ];
 
   for (const pattern of patterns) {
     const match = logChunk.match(pattern);
     if (match && match[1] && match[1].length === 32) {
-      return match[1];
-    }
-  }
-
-  // Generic 32-hex character regex inside Shield log line context
-  if (
-    logChunk.includes('[Shield') ||
-    logChunk.includes('Device Result') ||
-    logChunk.includes('Signature') ||
-    logChunk.includes('Attributes') ||
-    logChunk.toLowerCase().includes('shield')
-  ) {
-    const hexMatch = logChunk.match(/\b([a-f0-9]{32})\b/i);
-    if (hexMatch) {
-      return hexMatch[1];
+      return match[1].toLowerCase();
     }
   }
 

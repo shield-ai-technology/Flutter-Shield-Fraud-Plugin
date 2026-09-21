@@ -401,14 +401,20 @@ void main() {
         `[ShieldFlutterExample] Attributes SUCCESS - sessionId = ${validSessionId}`,
         `{"session_id": "${validSessionId}", "status": "success"}`,
         `[Shield] onSuccess: sessionId: ${validSessionId}`,
-        `Device Result ::: {"sessionId": "${validSessionId}"}`,
-        `Some other line\n[Shield] Initialized with session: ${validSessionId}\nDone`,
+        `[ShieldFlutterExample] SHIELD_VERIFIED_SESSION_ID: ${validSessionId}`,
+        `I/flutter: [ShieldFlutterExample] Device Result SUCCESS: {app_store: com.android.shell, device_intelligence: {global_shield_id: 43a6bc77a07ee5755f91e80cd84caf05, shield_id: 4c0fb91057c99f9cf6580de4dede9d9a}, session_id: ${validSessionId}}`,
       ];
 
       for (const log of logs) {
         const extracted = extractSessionId(log);
         assert.strictEqual(extracted, validSessionId, `Failed to extract from: ${log}`);
       }
+    });
+
+    it('should accurately extract session_id when global_shield_id and shield_id are present', () => {
+      const payload = `I/flutter ( 4406): [ShieldFlutterExample] Device Result SUCCESS: {app_store: com.android.shell, device_intelligence: {app_tampering: false, auto_clicker_enabled: false, call_state_active: false, debugging: true, device_score: 10, global_shield_id: 43a6bc77a07ee5755f91e80cd84caf05, hooking: false, is_device_masked: false, is_emulated: true, is_jailbroken: false, is_proxy: false, request_payload_tampered: false, root_mgr_installed: false, running_clone_apps: false, running_gps_spoofers: false, running_screen_sharing: false, running_vpn_spoofers: false, secondary_user: false, shield_id: 4c0fb91057c99f9cf6580de4dede9d9a, sus_sdk_conn: false, suspicious_factory_reset: false, virtual_os: false}, device_used_by_more_than_2_users: false, is_payload_tampered: false, platform: Android, pmx_id: , session_id: d81d2911c5274d4c8d1e635d181ca19e, timestamp: 1789980453, user_id: , version: 1.1.0}`;
+      const sid = extractSessionId(payload);
+      assert.strictEqual(sid, 'd81d2911c5274d4c8d1e635d181ca19e');
     });
 
     it('should return null for invalid or incomplete session IDs', () => {
