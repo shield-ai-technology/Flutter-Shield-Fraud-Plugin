@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_shieldalpha'
-  s.version          = '2.4.2'
+  s.version          = '2.5.0'
   s.summary          = 'flutter plugin for Shield SDK'
   s.description      = <<-DESC
 A new flutter plugin project.
@@ -15,7 +15,7 @@ A new flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency "ShieldAlpha", "= 2.0.1"
+  s.dependency "ShieldAlpha", "= 2.1.0"
   s.platform = :ios, '12.0'
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
