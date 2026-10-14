@@ -1,9 +1,9 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_shieldalpha (2.4.2):
+  - flutter_shieldalpha (2.5.0):
     - Flutter
-    - ShieldAlpha (= 2.0.1)
-  - ShieldAlpha (2.0.1)
+    - ShieldAlpha (= 2.1.0)
+  - ShieldAlpha (2.1.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
@@ -21,8 +21,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_shieldalpha: bfcfa3bebd95b3fa28020554d6623b1ef971d781
-  ShieldAlpha: 419544178aa229a27b91d4e4a26b265be11f9c72
+  flutter_shieldalpha: 071b6d780168fa0e97a04e672c92e5e4d71a5771
+  ShieldAlpha: 91bc97e784bbf631e837d7d6208b7d8eb0178a88
 
 PODFILE CHECKSUM: e678a3f3f85f376c1462c33ae610471873d1a368
 
